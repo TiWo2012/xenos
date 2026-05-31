@@ -1,17 +1,12 @@
 #include "drivers/serial.h"
+#include "drivers/vga.h"
 #include <stdint.h>
 
 extern "C" void kernel_main(uint32_t magic, uint32_t mb_info) {
-  volatile char *vga = (volatile char *)0xB8000;
 
-  const char *msg = "C++ kernel is alive";
+  vga_write_string("hello world from vga\n");
 
-  for (uint32_t i = 0; msg[i] != '\0'; i++) {
-    vga[i * 2] = msg[i];
-    vga[i * 2 + 1] = 0x0F;
-  }
-
-  serial_write_char('h');
+  serial_write_string("hello world from serial\n");
 
   while (true) {
     __asm__ __volatile__("hlt");

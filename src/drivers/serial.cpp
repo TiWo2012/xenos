@@ -53,3 +53,11 @@ void serial_write_char(char c) {
 
   outb(COM1, (uint8_t)c);
 }
+
+void serial_write_string(const char *s) {
+  while (*s != '\0') {
+    serial_write_char(*s);
+
+    s++;
+  }
+}

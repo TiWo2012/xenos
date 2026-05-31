@@ -1,5 +1,6 @@
 #pragma once
 
-void serial_write_char(char c);
-
 void serial_init();
+
+void serial_write_char(char c);
+void serial_write_string(const char *s);
