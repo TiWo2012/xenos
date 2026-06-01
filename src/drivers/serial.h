@@ -1,6 +1,8 @@
 #pragma once
 
-void serial_init();
+namespace serial {
 
-void serial_write_char(char c);
-void serial_write_string(const char *s);
+void init();
+void write_char(char c);
+void write_string(const char *s);
+} // namespace serial

@@ -2,7 +2,9 @@
 #include "binio.h"
 #include <cstdint>
 
-void serial_init() {
+namespace serial {
+
+void init() {
   const uint16_t COM1 = 0x3F8;
 
   // Disable interrupts
@@ -43,7 +45,7 @@ void serial_init() {
   outb(COM1 + 4, 0x0F);
 }
 
-void serial_write_char(char c) {
+void write_char(char c) {
   const uint16_t COM1 = 0x3F8;
 
   // Wait for transmit buffer to be empty
@@ -54,10 +56,11 @@ void serial_write_char(char c) {
   outb(COM1, (uint8_t)c);
 }
 
-void serial_write_string(const char *s) {
+void write_string(const char *s) {
   while (*s != '\0') {
-    serial_write_char(*s);
+    write_char(*s);
 
     s++;
   }
 }
+} // namespace serial
