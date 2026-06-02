@@ -3,6 +3,7 @@
 #include "drivers/irq/kbd.h"
 #include "drivers/irq/pit.h"
 #include "drivers/serial.h"
+#include "drivers/terminal/terminal.h"
 #include "drivers/vga.h"
 #include <stdint.h>
 
@@ -61,6 +62,9 @@ extern "C" void kernel_main(uint32_t magic, uint32_t mb_info) {
   serial::write_string("\n");
   test_iretq_asm();
   serial::write_string("survived iretq_asm\n");
+
+  serial::write_string("initializing terminal\n");
+  terminal::init();
 
   while (true) {
     __asm__ __volatile__("hlt");
