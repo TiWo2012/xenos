@@ -1,8 +1,9 @@
 #include "drivers/binio.h"
 #include "drivers/idt.h"
-#include "drivers/irq/pit.h"
 #include "drivers/irq/kbd.h"
+#include "drivers/irq/pit.h"
 #include "drivers/serial.h"
+#include "drivers/terminal/terminal.h"
 #include "drivers/vga.h"
 #include <stdint.h>
 
@@ -16,6 +17,9 @@ static void put_hex(uint64_t val) {
 extern "C" void test_iretq_asm(void);
 
 extern "C" void kernel_main(uint32_t magic, uint32_t mb_info) {
+  vga::write_string("clearing vga screen\n");
+  serial::write_string("clearing vga screen\n");
+  vga::clear_scr();
 
   vga::write_string("hello\nworld");
   serial::write_string("hello world from serial\n");
@@ -58,6 +62,9 @@ extern "C" void kernel_main(uint32_t magic, uint32_t mb_info) {
   serial::write_string("\n");
   test_iretq_asm();
   serial::write_string("survived iretq_asm\n");
+
+  serial::write_string("initializing terminal\n");
+  terminal::init();
 
   while (true) {
     __asm__ __volatile__("hlt");

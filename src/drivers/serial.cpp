@@ -74,4 +74,20 @@ void print_hex(uint64_t val) {
   serial::write_string(buf);
 }
 
+void write_dec(uint64_t val) {
+  char buf[21];
+  int i = 20;
+  buf[i] = '\0';
+  if (val == 0) {
+    write_char('0');
+    return;
+  }
+  while (val > 0 && i > 0) {
+    i--;
+    buf[i] = '0' + (val % 10);
+    val /= 10;
+  }
+  write_string(&buf[i]);
+}
+
 } // namespace serial
