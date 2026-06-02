@@ -54,6 +54,7 @@ void isr29();
 void isr30();
 void isr31();
 void isr32();
+void isr33();
 }
 
 IDTEntry idt[256];
@@ -110,6 +111,7 @@ void init() {
   set_idt_entry(30, isr30);
   set_idt_entry(31, isr31);
   set_idt_entry(32, isr32);
+  set_idt_entry(33, isr33);
 
   load_idt(&idt_ptr);
 }

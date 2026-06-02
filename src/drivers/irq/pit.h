@@ -9,6 +9,7 @@ namespace pit {
 #define PIT_CHANNEL0 0X40
 
 void pit_init(uint32_t freq);
+void timer_handler();
 
 } // namespace pit
 } // namespace irq

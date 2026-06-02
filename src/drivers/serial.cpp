@@ -63,4 +63,15 @@ void write_string(const char *s) {
     s++;
   }
 }
+
+void print_hex(uint64_t val) {
+  char buf[19] = "0x0000000000000000";
+  for (int i = 17; i >= 2; i--) {
+    int digit = val & 0xF;
+    buf[i] = digit < 10 ? '0' + digit : 'a' + digit - 10;
+    val >>= 4;
+  }
+  serial::write_string(buf);
+}
+
 } // namespace serial

@@ -107,6 +107,7 @@ ISR_NOERR 30
 ISR_NOERR 31
 
 ISR_NOERR 32
+ISR_NOERR 33
 
 ; -------------------------
 ; load IDT

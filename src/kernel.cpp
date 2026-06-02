@@ -1,27 +1,10 @@
 #include "drivers/binio.h"
 #include "drivers/idt.h"
 #include "drivers/irq/pit.h"
+#include "drivers/irq/kbd.h"
 #include "drivers/serial.h"
 #include "drivers/vga.h"
 #include <stdint.h>
-
-static volatile uint64_t tick_count = 0;
-
-static void timer_handler() {
-  tick_count = tick_count + 1;
-  if (tick_count % 100 == 0) {
-    serial::write_string("tick ");
-    uint64_t tmp = tick_count;
-    char buf[19] = "0x0000000000000000";
-    for (int i = 17; i >= 2; i--) {
-      int d = tmp & 0xF;
-      buf[i] = d < 10 ? '0' + d : 'a' + d - 10;
-      tmp >>= 4;
-    }
-    serial::write_string(buf);
-    serial::write_string("\n");
-  }
-}
 
 static void put_hex(uint64_t val) {
   for (int i = 60; i >= 0; i -= 4) {
@@ -51,10 +34,14 @@ extern "C" void kernel_main(uint32_t magic, uint32_t mb_info) {
 
   serial::write_string("init pit\n");
   irq::pit::pit_init(1000);
-  idt::irq_register_handler(0, timer_handler);
+  idt::irq_register_handler(0, irq::pit::timer_handler);
 
-  // mask everything, then unmask IRQ0
-  outb(0x21, 0xFE);
+  serial::write_string("init kbd\n");
+  irq::kbd::kbd_init();
+  idt::irq_register_handler(1, irq::kbd::keyboard_handler);
+
+  // mask everything, then unmask IRQ0 and IRQ1
+  outb(0x21, 0xFC);
   outb(0xA1, 0xFF);
 
   __asm__ __volatile__("sti");
