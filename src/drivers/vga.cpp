@@ -1,4 +1,5 @@
 #include "vga.h"
+#include <cstddef>
 
 namespace vga {
 
@@ -37,6 +38,14 @@ void write_string(const char *s) {
   for (int i = 0; s[i] != '\0'; i++) {
     write_char(s[i]);
   }
+}
+
+void clear_scr() {
+  for (size_t i = 0; i < 80 * 25; i++) {
+    write_char(' ');
+  }
+
+  vga_idx.x = vga_idx.y = 0;
 }
 
 } // namespace vga
