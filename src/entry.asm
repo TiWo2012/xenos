@@ -121,6 +121,10 @@ _start:
 BITS 64
 
 long_mode_entry:
+    mov ax, 0x10
+    mov ss, ax
+    mov ds, ax
+    mov es, ax
     mov rsp, stack_top
 
     ; restore args (safe in 64-bit now)
@@ -141,9 +145,10 @@ long_mode_entry:
 section .rodata
 
 gdt_start:
-    dq 0x0000000000000000
-    dq 0x00af9a000000ffff
-    dq 0x00af92000000ffff
+    dq 0x0000000000000000     ; 0x00 - null
+    dq 0x00af9a000000ffff     ; 0x08 - kernel code
+    dq 0x00af92000000ffff     ; 0x10 - kernel data
+    dq 0x00af92000000ffff     ; 0x18 - kernel data (for bootloader SS match)
 
 gdt_end:
 

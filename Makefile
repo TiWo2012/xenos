@@ -8,7 +8,8 @@ INCLUDE_DIR := include
 
 CXXFLAGS := -Wall -Wextra -std=c++23 -g -MMD -MP \
             -I$(INCLUDE_DIR) \
-            -ffreestanding -fno-exceptions -fno-rtti -m64
+            -ffreestanding -fno-exceptions -fno-rtti -m64 \
+            -fno-stack-protector
 
 CFLAGS   := -Wall -Wextra -g -MMD -MP \
             -ffreestanding -m64
