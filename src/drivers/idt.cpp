@@ -1,5 +1,6 @@
 // idt.cpp
 #include "idt.h"
+#include "binio.h"
 #include <stdint.h>
 
 namespace idt {
@@ -109,5 +110,33 @@ void init() {
   set_idt_entry(31, isr31);
 
   load_idt(&idt_ptr);
+}
+
+void pic_remap() {
+  uint8_t a1, a2;
+
+  // save masks
+  asm volatile("inb %1, %0" : "=a"(a1) : "Nd"(0x21));
+  asm volatile("inb %1, %0" : "=a"(a2) : "Nd"(0xA1));
+
+  // start initialization
+  outb(0x20, 0x11);
+  outb(0xA0, 0x11);
+
+  // set vector offsets
+  outb(0x21, 0x20); // master -> 32
+  outb(0xA1, 0x28); // slave -> 40
+
+  // tell master about slave at IRQ2
+  outb(0x21, 0x04);
+  outb(0xA1, 0x02);
+
+  // set 8086 mode
+  outb(0x21, 0x01);
+  outb(0xA1, 0x01);
+
+  // restore masks
+  outb(0x21, a1);
+  outb(0xA1, a2);
 }
 } // namespace idt

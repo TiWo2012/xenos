@@ -20,8 +20,11 @@ extern "C" void test_iretq_asm(void);
 
 extern "C" void kernel_main(uint32_t magic, uint32_t mb_info) {
 
-  vga::write_string("hello\n world");
+  vga::write_string("hello\nworld");
   serial::write_string("hello world from serial\n");
+
+  serial::write_string("remaping pic\n");
+  idt::pic_remap();
 
   uint64_t rsp_val;
   __asm__ __volatile__("mov %%rsp, %0" : "=r"(rsp_val));
