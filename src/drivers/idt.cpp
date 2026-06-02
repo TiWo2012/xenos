@@ -53,6 +53,7 @@ void isr28();
 void isr29();
 void isr30();
 void isr31();
+void isr32();
 }
 
 IDTEntry idt[256];
@@ -108,6 +109,7 @@ void init() {
   set_idt_entry(29, isr29);
   set_idt_entry(30, isr30);
   set_idt_entry(31, isr31);
+  set_idt_entry(32, isr32);
 
   load_idt(&idt_ptr);
 }
@@ -138,5 +140,41 @@ void pic_remap() {
   // restore masks
   outb(0x21, a1);
   outb(0xA1, a2);
+}
+
+void pic_eoi(uint8_t irq) {
+  if (irq >= 8)
+    outb(0xA0, 0x20);
+
+  outb(0x20, 0x20);
+}
+void (*irq_handlers[16])() = {nullptr};
+
+void irq_register_handler(uint8_t irq, void (*handler)()) {
+  if (irq < 16)
+    irq_handlers[irq] = handler;
+}
+
+void irq_dispatch(uint64_t int_no) {
+  if (int_no >= 32 && int_no < 48) {
+    uint8_t irq = int_no - 32;
+    pic_eoi(irq);
+    if (irq_handlers[irq])
+      irq_handlers[irq]();
+  }
+}
+
+void pic_unmask_irq(uint8_t irq) {
+  if (irq < 8)
+    outb(0x21, inb(0x21) & ~(1 << irq));
+  else
+    outb(0xA1, inb(0xA1) & ~(1 << (irq - 8)));
+}
+
+void pic_mask_irq(uint8_t irq) {
+  if (irq < 8)
+    outb(0x21, inb(0x21) | (1 << irq));
+  else
+    outb(0xA1, inb(0xA1) | (1 << (irq - 8)));
 }
 } // namespace idt

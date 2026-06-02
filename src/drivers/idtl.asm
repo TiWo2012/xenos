@@ -106,6 +106,8 @@ ISR_NOERR 29
 ISR_NOERR 30
 ISR_NOERR 31
 
+ISR_NOERR 32
+
 ; -------------------------
 ; load IDT
 ; -------------------------
@@ -126,7 +128,7 @@ test_iretq_asm:
     push qword 0x10      ; SS=0x10 at [E0-8]
     lea rax, [rsp + 8]   ; rax = (E0-8)+8 = E0 (entry RSP)
     push rax             ; NEW_RSP=E0 at [E0-16]
-    push qword 0x02      ; RFLAGS at [E0-24]
+    push qword 0x202     ; RFLAGS (IF=1) at [E0-24]
     push qword 0x08      ; CS at [E0-32]
     lea rax, [rel .ret]
     push rax             ; RIP at [E0-40]

@@ -1,4 +1,5 @@
 // isr.cpp
+#include "idt.h"
 #include "serial.h"
 #include <stdint.h>
 
@@ -20,6 +21,11 @@ static void print_hex(uint64_t val) {
 }
 
 extern "C" void isr_handler(Registers *regs) {
+  if (regs->int_no >= 32) {
+    idt::irq_dispatch(regs->int_no);
+    return;
+  }
+
   uint64_t *frame = (uint64_t *)regs;
 
   struct { uint16_t limit; uint64_t base; } __attribute__((packed)) gdtr;
