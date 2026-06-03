@@ -1,3 +1,5 @@
 build/
+iso/
+os.iso
 compile_commands.json
 tags
