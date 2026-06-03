@@ -2,6 +2,7 @@
 #include "../../utils/string.h"
 #include "../serial.h"
 #include "../vga.h"
+#include "memory.h"
 #include <cstdint>
 
 namespace terminal {
@@ -9,17 +10,21 @@ namespace terminal {
 static char buf[256];
 static uint8_t buf_idx = 0;
 
+static void write_prompt() {
+  vga::write_char('>');
+  vga::write_char(' ');
+}
+
 void init() {
   buf_idx = 0;
-  for (int i = 0; i < 256; i++) {
-    buf[i] = 0;
-  }
+  utils::memory::memset(buf, 0, sizeof(buf));
+  write_prompt();
 }
 
 // PS/2 scancode set 1 → US ANSI layout (unshifted)
 const char keymap[256] = {
     0,    0,   '1', '2',  '3',  '4', '5', '6', // 0x00-0x07
-    '7',  '8', '9', '0',  '-',  '=', 0,   0,   // 0x08-0x0F
+    '7',  '8', '9', '0',  '-',  '=', 8,   0,   // 0x08-0x0F
     'q',  'w', 'e', 'r',  't',  'y', 'u', 'i', // 0x10-0x17
     'o',  'p', '[', ']',  '\n', 0,   'a', 's', // 0x18-0x1F
     'd',  'f', 'g', 'h',  'j',  'k', 'l', ';', // 0x20-0x27
@@ -41,16 +46,52 @@ void send_key(uint8_t scanCode) {
   if (key == 0)
     return;
 
+  if (key == 8) {
+    if (buf_idx > 0) {
+      buf_idx--;
+      buf[buf_idx] = '\0';
+      vga::backspace();
+    }
+    serial::write_string("buf_idx: ");
+    serial::write_dec(buf_idx);
+    serial::write_char('\n');
+    serial::write_string("buf: ");
+    serial::write_string(buf);
+    serial::write_char('\n');
+    return;
+  }
+
   vga::write_char(key);
 
   serial::write_string("pressed key: ");
   serial::write_char(key);
   serial::write_char('\n');
 
-  if (buf_idx < 255) {
-    buf[buf_idx++] = key;
+  if (key == '\n') {
+    if (buf_idx > 0) {
+      buf[buf_idx] = '\0';
+    } else {
+      buf[0] = '\0';
+    }
+
+    serial::write_string("buf_idx: ");
+    serial::write_dec(buf_idx);
+    serial::write_char('\n');
+    serial::write_string("buf: ");
+    serial::write_string(buf);
+    serial::write_char('\n');
+
+    process_command();
+    buf_idx = 0;
+    utils::memory::memset(buf, 0, sizeof(buf));
+    write_prompt();
+    return;
   }
-  buf[buf_idx] = '\0';
+
+  if (buf_idx < sizeof(buf) - 1) {
+    buf[buf_idx++] = key;
+    buf[buf_idx] = '\0';
+  }
 
   serial::write_string("buf_idx: ");
   serial::write_dec(buf_idx);
@@ -58,21 +99,15 @@ void send_key(uint8_t scanCode) {
   serial::write_string("buf: ");
   serial::write_string(buf);
   serial::write_char('\n');
-
-  if (key == '\n') {
-    buf[buf_idx - 1] = '\0';
-    process_command();
-    buf_idx = 0;
-    for (int i = 0; i < 256; i++) {
-      buf[i] = 0;
-    }
-  }
 }
 
 extern "C" void asm_shutdown();
+
 void process_command() {
   if (utils::string::strcmp(buf, "exit") == 0) {
     asm_shutdown();
+  } else if (utils::string::strcmp(buf, "clear") == 0) {
+    vga::clear_scr();
   }
 }
 

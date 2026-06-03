@@ -6,7 +6,7 @@
 
 namespace irq {
 namespace kbd {
-#define DEBUG_KBD_SCANCODE false
+#define DEBUG_KBD_SCANCODE true
 
 void kbd_init() {
   serial::write_string("kbd_init (stub)\n");

@@ -19,6 +19,11 @@ void write_char(char c) {
     return;
   }
 
+  if (c == '\b') {
+    backspace();
+    return;
+  }
+
   vga[(vga_idx.y * 80 + vga_idx.x) * 2] = c;
   vga[(vga_idx.y * 80 + vga_idx.x) * 2 + 1] = 0x0F;
 
@@ -34,6 +39,22 @@ void write_char(char c) {
   }
 }
 
+void backspace() {
+  if (vga_idx.x == 0 && vga_idx.y == 0) {
+    return;
+  }
+
+  if (vga_idx.x == 0) {
+    vga_idx.y--;
+    vga_idx.x = 79;
+  } else {
+    vga_idx.x--;
+  }
+
+  vga[(vga_idx.y * 80 + vga_idx.x) * 2] = ' ';
+  vga[(vga_idx.y * 80 + vga_idx.x) * 2 + 1] = 0x0F;
+}
+
 void write_string(const char *s) {
   for (int i = 0; s[i] != '\0'; i++) {
     write_char(s[i]);
@@ -42,7 +63,8 @@ void write_string(const char *s) {
 
 void clear_scr() {
   for (size_t i = 0; i < 80 * 25; i++) {
-    write_char(' ');
+    vga[i * 2] = ' ';
+    vga[i * 2 + 1] = 0x0F;
   }
 
   vga_idx.x = vga_idx.y = 0;
