@@ -3,14 +3,14 @@
 #include "../serial.h"
 #include "../vga.h"
 #include <cstdint>
-#include <cstring>
 
 namespace terminal {
 
-char buf[256];
-uint8_t buf_idx = 0;
+static char buf[256];
+static uint8_t buf_idx = 0;
 
 void init() {
+  buf_idx = 0;
   for (int i = 0; i < 256; i++) {
     buf[i] = 0;
   }
@@ -47,14 +47,17 @@ void send_key(uint8_t scanCode) {
   serial::write_char(key);
   serial::write_char('\n');
 
+  if (buf_idx < 255) {
+    buf[buf_idx++] = key;
+  }
+  buf[buf_idx] = '\0';
+
   serial::write_string("buf_idx: ");
   serial::write_dec(buf_idx);
   serial::write_char('\n');
   serial::write_string("buf: ");
   serial::write_string(buf);
   serial::write_char('\n');
-
-  buf[buf_idx++] = key;
 
   if (key == '\n') {
     buf[buf_idx - 1] = '\0';
@@ -68,7 +71,7 @@ void send_key(uint8_t scanCode) {
 
 extern "C" void asm_shutdown();
 void process_command() {
-  if (utils::string::strcmp(reinterpret_cast<const char *>(buf), "exit") == 0) {
+  if (utils::string::strcmp(buf, "exit") == 0) {
     asm_shutdown();
   }
 }
