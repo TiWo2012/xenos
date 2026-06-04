@@ -7,6 +7,8 @@
 
 namespace terminal {
 
+#define DEBUG_TERM_ECHO_KEY false
+
 static char buf[256];
 static uint8_t buf_idx = 0;
 
@@ -52,20 +54,24 @@ void send_key(uint8_t scanCode) {
       buf[buf_idx] = '\0';
       vga::backspace();
     }
+#if DEBUG_TERM_ECHO_KEY
     serial::write_string("buf_idx: ");
     serial::write_dec(buf_idx);
     serial::write_char('\n');
     serial::write_string("buf: ");
     serial::write_string(buf);
     serial::write_char('\n');
+#endif
     return;
   }
 
   vga::write_char(key);
 
+#if DEBUG_TERM_ECHO_KEY
   serial::write_string("pressed key: ");
   serial::write_char(key);
   serial::write_char('\n');
+#endif
 
   if (key == '\n') {
     if (buf_idx > 0) {
@@ -74,12 +80,14 @@ void send_key(uint8_t scanCode) {
       buf[0] = '\0';
     }
 
+#if DEBUG_TERM_ECHO_KEY
     serial::write_string("buf_idx: ");
     serial::write_dec(buf_idx);
     serial::write_char('\n');
     serial::write_string("buf: ");
     serial::write_string(buf);
     serial::write_char('\n');
+#endif
 
     process_command();
     buf_idx = 0;
@@ -93,12 +101,14 @@ void send_key(uint8_t scanCode) {
     buf[buf_idx] = '\0';
   }
 
+#if DEBUG_TERM_ECHO_KEY
   serial::write_string("buf_idx: ");
   serial::write_dec(buf_idx);
   serial::write_char('\n');
   serial::write_string("buf: ");
   serial::write_string(buf);
   serial::write_char('\n');
+#endif
 }
 
 extern "C" void asm_shutdown();

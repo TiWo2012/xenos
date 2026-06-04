@@ -21,7 +21,6 @@ extern "C" void kernel_main(uint32_t magic, uint32_t mb_info) {
   serial::write_string("clearing vga screen\n");
   vga::clear_scr();
 
-  vga::write_string("hello\nworld");
   serial::write_string("hello world from serial\n");
 
   serial::write_string("remaping pic\n");
@@ -62,6 +61,8 @@ extern "C" void kernel_main(uint32_t magic, uint32_t mb_info) {
   serial::write_string("\n");
   test_iretq_asm();
   serial::write_string("survived iretq_asm\n");
+
+  vga::write_string("welcome to xenos\n");
 
   serial::write_string("initializing terminal\n");
   terminal::init();
