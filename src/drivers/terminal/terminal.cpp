@@ -1,4 +1,6 @@
 #include "terminal.h"
+#include "../mem/heap.h"
+#include "../mem/pmm.h"
 #include "../../utils/string.h"
 #include "../serial.h"
 #include "../vga.h"
@@ -55,15 +57,16 @@ void send_key(uint8_t scanCode) {
       vga::backspace();
     }
 #if DEBUG_TERM_ECHO_KEY
-  serial::printf("buf_idx: %u\n", buf_idx);
-  serial::printf("buf: %s\n", buf);
+    serial::printf("buf_idx: %u\n", buf_idx);
+    serial::printf("buf: %s\n", buf);
 #endif
-}
+    return;
+  }
 
   vga::write_char(key);
 
 #if DEBUG_TERM_ECHO_KEY
-    serial::printf("pressed key: %c\n", key);
+  serial::printf("pressed key: %c\n", key);
 #endif
 
   if (key == '\n') {
@@ -91,8 +94,8 @@ void send_key(uint8_t scanCode) {
   }
 
 #if DEBUG_TERM_ECHO_KEY
-    serial::printf("buf_idx: %u\n", buf_idx);
-    serial::printf("buf: %s\n", buf);
+  serial::printf("buf_idx: %u\n", buf_idx);
+  serial::printf("buf: %s\n", buf);
 #endif
 }
 
@@ -103,6 +106,17 @@ void process_command() {
     asm_shutdown();
   } else if (utils::string::strcmp(buf, "clear") == 0) {
     vga::clear_scr();
+  } else if (utils::string::strcmp(buf, "mem") == 0) {
+    size_t total = pmm::total_frames();
+    size_t free = pmm::free_frames();
+    size_t used = total - free;
+    char line[64];
+    utils::string::sprintf(line, "pmm: total=%u  free=%u  used=%u\n", total,
+                           free, used);
+    vga::write_string(line);
+    serial::printf("%s", line);
+  } else {
+    vga::write_string("command not know\n");
   }
 }
 

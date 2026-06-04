@@ -2,6 +2,8 @@
 #include "drivers/idt.h"
 #include "drivers/irq/kbd.h"
 #include "drivers/irq/pit.h"
+#include "drivers/mem/heap.h"
+#include "drivers/mem/pmm.h"
 #include "drivers/serial.h"
 #include "drivers/terminal/terminal.h"
 #include "drivers/vga.h"
@@ -9,7 +11,7 @@
 
 extern "C" void test_iretq_asm(void);
 
-extern "C" void kernel_main(uint32_t magic, uint32_t mb_info) {
+extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
   vga::printf("clearing vga screen\n");
   serial::printf("clearing vga screen\n");
   vga::clear_scr();
@@ -48,6 +50,12 @@ extern "C" void kernel_main(uint32_t magic, uint32_t mb_info) {
   serial::printf("rsp before call=0x%lx\n", rsp_val);
   test_iretq_asm();
   serial::printf("survived iretq_asm\n");
+
+  serial::printf("init pmm\n");
+  pmm::init(mb_info);
+
+  serial::printf("init heap\n");
+  heap::init();
 
   vga::printf("welcome to xenos\n");
 

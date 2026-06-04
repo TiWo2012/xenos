@@ -3,6 +3,7 @@ ENTRY(_start)
 SECTIONS
 {
     . = 1M;
+    KERNEL_START = .;
 
     .text : ALIGN(4K) { *(.text*) }
     .rodata : ALIGN(4K) { *(.rodata*) }
@@ -12,4 +13,6 @@ SECTIONS
         *(COMMON)
         *(.bss*)
     }
+
+    KERNEL_END = .;
 }

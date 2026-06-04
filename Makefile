@@ -4,9 +4,9 @@ CC         := clang
 AS         := nasm
 LD         := ld.lld
 
-INCLUDE_DIR := -Iinclude -Isrc/utils
+INCLUDE_DIR := -Iinclude -Isrc -Isrc/utils -Isrc/drivers
 
-CXXFLAGS := -Wall -Wextra -std=c++23 -g -MMD -MP \
+CXXFLAGS := -Wall -Wextra -std=c++23 -g -O0 -MMD -MP \
             $(INCLUDE_DIR) \
             -ffreestanding -fno-exceptions -fno-rtti -m64 \
             -fno-stack-protector
