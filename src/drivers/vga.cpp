@@ -105,4 +105,9 @@ void clear_scr() {
   update_cursor();
 }
 
+void set_cursor_visible() {
+  set_cursor_shape(0, 15);
+  update_cursor();
+}
+
 } // namespace vga

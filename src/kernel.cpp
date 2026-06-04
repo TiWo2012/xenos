@@ -54,14 +54,13 @@ extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
   serial::printf("init pmm\n");
   pmm::init(mb_info);
 
+  vga::printf("welcome to xenos\n");
+  serial::printf("initializing terminal\n");
+  terminal::init();
+
   serial::printf("init heap\n");
   size_t heap_size = pmm::free_frames() * 4096;
   heap::init(heap_size);
-
-  vga::printf("welcome to xenos\n");
-
-  serial::printf("initializing terminal\n");
-  terminal::init();
 
   while (true) {
     __asm__ __volatile__("hlt");

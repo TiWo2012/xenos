@@ -22,6 +22,7 @@ static void write_prompt() {
 void init() {
   buf_idx = 0;
   utils::memory::memset(buf, 0, sizeof(buf));
+  vga::set_cursor_visible();
   write_prompt();
 }
 
@@ -116,10 +117,9 @@ void process_command() {
     vga::write_string(line);
     serial::printf("%s", line);
   } else if (utils::string::strcmp(buf, "") == 0) {
-    ;
   } else {
     vga::write_string("command does not exist\n");
-    serial::printf("invallid cmd: %s\n", buf);
+    serial::printf("invalid cmd: %s\n", buf);
   }
 }
 
