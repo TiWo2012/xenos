@@ -1,7 +1,7 @@
 #include "terminal.h"
+#include "../../utils/string.h"
 #include "../mem/heap.h"
 #include "../mem/pmm.h"
-#include "../../utils/string.h"
 #include "../serial.h"
 #include "../vga.h"
 #include "memory.h"
@@ -115,8 +115,11 @@ void process_command() {
                            free, used);
     vga::write_string(line);
     serial::printf("%s", line);
+  } else if (utils::string::strcmp(buf, "") == 0) {
+
   } else {
     vga::write_string("command not know\n");
+    serial::printf("cmd: %s\n", buf);
   }
 }
 
