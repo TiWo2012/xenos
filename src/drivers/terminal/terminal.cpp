@@ -55,22 +55,15 @@ void send_key(uint8_t scanCode) {
       vga::backspace();
     }
 #if DEBUG_TERM_ECHO_KEY
-    serial::write_string("buf_idx: ");
-    serial::write_dec(buf_idx);
-    serial::write_char('\n');
-    serial::write_string("buf: ");
-    serial::write_string(buf);
-    serial::write_char('\n');
+  serial::printf("buf_idx: %u\n", buf_idx);
+  serial::printf("buf: %s\n", buf);
 #endif
-    return;
-  }
+}
 
   vga::write_char(key);
 
 #if DEBUG_TERM_ECHO_KEY
-  serial::write_string("pressed key: ");
-  serial::write_char(key);
-  serial::write_char('\n');
+    serial::printf("pressed key: %c\n", key);
 #endif
 
   if (key == '\n') {
@@ -81,12 +74,8 @@ void send_key(uint8_t scanCode) {
     }
 
 #if DEBUG_TERM_ECHO_KEY
-    serial::write_string("buf_idx: ");
-    serial::write_dec(buf_idx);
-    serial::write_char('\n');
-    serial::write_string("buf: ");
-    serial::write_string(buf);
-    serial::write_char('\n');
+    serial::printf("buf_idx: %u\n", buf_idx);
+    serial::printf("buf: %s\n", buf);
 #endif
 
     process_command();
@@ -102,12 +91,8 @@ void send_key(uint8_t scanCode) {
   }
 
 #if DEBUG_TERM_ECHO_KEY
-  serial::write_string("buf_idx: ");
-  serial::write_dec(buf_idx);
-  serial::write_char('\n');
-  serial::write_string("buf: ");
-  serial::write_string(buf);
-  serial::write_char('\n');
+    serial::printf("buf_idx: %u\n", buf_idx);
+    serial::printf("buf: %s\n", buf);
 #endif
 }
 

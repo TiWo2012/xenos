@@ -1,5 +1,7 @@
 #include "vga.h"
+#include "../utils/string.h"
 #include <cstddef>
+#include <stdarg.h>
 
 namespace vga {
 
@@ -59,6 +61,15 @@ void write_string(const char *s) {
   for (int i = 0; s[i] != '\0'; i++) {
     write_char(s[i]);
   }
+}
+
+void printf(const char *format, ...) {
+  char buf[1024];
+  va_list args;
+  va_start(args, format);
+  utils::string::vsprintf(buf, format, args);
+  va_end(args);
+  write_string(buf);
 }
 
 void clear_scr() {

@@ -1,6 +1,8 @@
 #include "serial.h"
+#include "../utils/string.h"
 #include "binio.h"
 #include <cstdint>
+#include <stdarg.h>
 
 namespace serial {
 
@@ -88,6 +90,15 @@ void write_dec(uint64_t val) {
     val /= 10;
   }
   write_string(&buf[i]);
+}
+
+void printf(const char *format, ...) {
+  char buf[1024];
+  va_list args;
+  va_start(args, format);
+  utils::string::vsprintf(buf, format, args);
+  va_end(args);
+  write_string(buf);
 }
 
 } // namespace serial
