@@ -85,11 +85,15 @@ void init(uint32_t mb_info_addr) {
       mmap_tag* mt = (mmap_tag*)tag;
       uint32_t entry_count = (mt->size - sizeof(mmap_tag)) / mt->entry_size;
       mmap_entry* entries = (mmap_entry*)(mb + offset + sizeof(mmap_tag));
+      uint64_t total_ram = 0;
       serial::printf("pmm: mmap has %u entries\n", entry_count);
       for (uint32_t i = 0; i < entry_count; i++) {
         mmap_entry* e = (mmap_entry*)((uint8_t*)entries + i * mt->entry_size);
         uint64_t end = e->base_addr + e->length;
+        serial::printf("  mmap[%u] base=0x%lx len=0x%lx type=%u\n",
+                       i, e->base_addr, e->length, e->type);
         if (e->type == 1) {
+          total_ram += e->length;
           for (uint64_t p = e->base_addr; p < end && p < 0x100000000ULL; p += 4096) {
             size_t fi = frame_idx(p);
             if (fi < MAX_FRAMES && test_bit(fi)) {
@@ -99,6 +103,8 @@ void init(uint32_t mb_info_addr) {
           }
         }
       }
+      serial::printf("pmm: total installed memory: %u MB (%u bytes)\n",
+                     (uint32_t)(total_ram / (1024 * 1024)), (uint32_t)total_ram);
     }
     offset += tag->size;
     if (offset & 7)

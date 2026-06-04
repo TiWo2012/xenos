@@ -5,7 +5,6 @@
 
 namespace heap {
 
-static const size_t HEAP_SIZE = 4 * 1024 * 1024;
 static const size_t BLOCK_HEADER_SIZE = 32;
 static const size_t MIN_SPLIT = BLOCK_HEADER_SIZE + 16;
 
@@ -18,25 +17,33 @@ struct block {
 
 static block* head = nullptr;
 
-void init() {
-  serial::printf("heap: allocating %u bytes from pmm\n", HEAP_SIZE);
-  void* base = pmm::alloc_pages(HEAP_SIZE / 4096);
+void init(size_t size) {
+  serial::printf("heap: requesting %u bytes from pmm\n", (uint32_t)size);
+  size_t num_pages = (size + 4095) / 4096;
+  void* base = nullptr;
+  while (num_pages > 0) {
+    base = pmm::alloc_pages(num_pages);
+    if (base)
+      break;
+    num_pages--;
+  }
   if (!base) {
     serial::printf("heap: ERROR - pmm out of memory\n");
     return;
   }
 
-  for (size_t i = 0; i < HEAP_SIZE; i += 4)
+  size_t actual_size = num_pages * 4096;
+  for (size_t i = 0; i < actual_size; i += 4)
     *(volatile uint32_t *)((uintptr_t)base + i) = 0;
 
   head = (block*)base;
-  head->size = HEAP_SIZE;
+  head->size = actual_size;
   head->free = true;
   head->prev = nullptr;
   head->next = nullptr;
 
-  serial::printf("heap: init done, base=0x%lx, size=%u\n",
-                 (uint64_t)head, HEAP_SIZE);
+  serial::printf("heap: init done, base=0x%lx, size=%u (%u pages)\n",
+                 (uint64_t)head, (uint32_t)actual_size, (uint32_t)num_pages);
 }
 
 void* alloc(size_t size) {

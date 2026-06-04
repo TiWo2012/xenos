@@ -116,10 +116,10 @@ void process_command() {
     vga::write_string(line);
     serial::printf("%s", line);
   } else if (utils::string::strcmp(buf, "") == 0) {
-
+    ;
   } else {
-    vga::write_string("command not know\n");
-    serial::printf("cmd: %s\n", buf);
+    vga::write_string("command does not exist\n");
+    serial::printf("invallid cmd: %s\n", buf);
   }
 }
 

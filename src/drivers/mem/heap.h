@@ -5,7 +5,7 @@
 
 namespace heap {
 
-void init();
+void init(size_t size);
 void* alloc(size_t size);
 void free(void* ptr);
 void* calloc(size_t num, size_t size);
