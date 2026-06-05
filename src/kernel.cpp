@@ -55,20 +55,19 @@ extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
   serial::printf("init pmm\n");
   pmm::init(mb_info);
 
-  vga::printf("welcome to xenos\n");
+  vga::color white;
+  white.r = white.g = white.b = white.a = 0xFF;
+  vga::color black;
+  black.raw = 0;
 
-  vga::color colors[3];
-  colors[0].r = 0xFF; colors[0].g = 0x00; colors[0].b = 0x00; colors[0].a = 0xFF;
-  colors[1].r = 0x00; colors[1].g = 0xFF; colors[1].b = 0x00; colors[1].a = 0xFF;
-  colors[2].r = 0x00; colors[2].g = 0x00; colors[2].b = 0xFF; colors[2].a = 0xFF;
-
-  for (uint32_t y = 0; y < vga::fb_info.height; y++) {
-    for (uint32_t x = 0; x < vga::fb_info.width; x++) {
-      uint32_t stripe = (x * 3) / vga::fb_info.width;
-      vga::put_pixel(x, y, colors[stripe]);
-    }
+  const char* msg = "hello world";
+  uint32_t msg_x = 10;
+  uint32_t msg_y = 10;
+  for (int i = 0; msg[i] != '\0'; i++) {
+    vga::put_char(msg_x, msg_y, msg[i], white, black);
+    msg_x += 8;
   }
-  serial::printf("stripes drawn\n");
+  serial::printf("hello world drawn\n");
 
   serial::printf("initializing terminal\n");
   terminal::init();
