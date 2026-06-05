@@ -64,8 +64,9 @@ void init(uint32_t mb_info_addr) {
   serial::printf("pmm: init, bitmap at 0x%lx, size %u\n",
                  (uint64_t)bitmap, BITMAP_SIZE);
 
-  for (size_t i = 0; i < BITMAP_SIZE; i++)
+  for (size_t i = 0; i < BITMAP_SIZE; i++) {
     bitmap[i] = 0xFF;
+  }
   used_frames = MAX_FRAMES;
 
   uint8_t* mb = (uint8_t*)(uint64_t)mb_info_addr;
@@ -79,8 +80,9 @@ void init(uint32_t mb_info_addr) {
   uint32_t offset = 8;
   while (offset + 8 <= total_size) {
     multiboot_tag* tag = (multiboot_tag*)(mb + offset);
-    if (tag->type == 0)
+    if (tag->type == 0) {
       break;
+    }
     if (tag->type == 6 && tag->size >= sizeof(mmap_tag)) {
       mmap_tag* mt = (mmap_tag*)tag;
       uint32_t entry_count = (mt->size - sizeof(mmap_tag)) / mt->entry_size;
@@ -107,8 +109,9 @@ void init(uint32_t mb_info_addr) {
                      (uint32_t)(total_ram / (1024 * 1024)), (uint32_t)total_ram);
     }
     offset += tag->size;
-    if (offset & 7)
+    if (offset & 7) {
       offset = (offset + 7) & ~7;
+    }
   }
 
   mark_used(0, 0x1000);
@@ -141,22 +144,26 @@ void* alloc_page() {
 
 void free_page(void* phys) {
   uint64_t addr = (uint64_t)phys;
-  if (addr & 0xFFF)
+  if (addr & 0xFFF) {
     return;
+  }
   size_t i = frame_idx(addr);
   if (i < MAX_FRAMES && test_bit(i)) {
     clear_bit(i);
     used_frames--;
-    if (i < last_alloc)
+    if (i < last_alloc) {
       last_alloc = i;
+    }
   }
 }
 
 void* alloc_pages(size_t n) {
-  if (n == 0)
+  if (n == 0) {
     return nullptr;
-  if (n == 1)
+  }
+  if (n == 1) {
     return alloc_page();
+  }
 
   for (size_t start = last_alloc; start + n <= MAX_FRAMES; start++) {
     bool ok = true;
@@ -166,10 +173,12 @@ void* alloc_pages(size_t n) {
         break;
       }
     }
-    if (!ok)
+    if (!ok) {
       continue;
-    for (size_t j = 0; j < n; j++)
+    }
+    for (size_t j = 0; j < n; j++) {
       set_bit(start + j);
+    }
     used_frames += n;
     last_alloc = start + n;
     return (void*)(start * 4096);
@@ -183,10 +192,12 @@ void* alloc_pages(size_t n) {
         break;
       }
     }
-    if (!ok)
+    if (!ok) {
       continue;
-    for (size_t j = 0; j < n; j++)
+    }
+    for (size_t j = 0; j < n; j++) {
       set_bit(start + j);
+    }
     used_frames += n;
     last_alloc = start + n;
     return (void*)(start * 4096);

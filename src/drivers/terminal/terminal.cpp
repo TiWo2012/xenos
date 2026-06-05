@@ -45,11 +45,13 @@ void send_key(uint8_t scanCode) {
   auto key = keymap[scanCode];
 
   // break codes (key release) = make code + 0x80 → ignore
-  if (scanCode & 0x80)
+  if (scanCode & 0x80) {
     return;
+  }
 
-  if (key == 0)
+  if (key == 0) {
     return;
+  }
 
   if (key == 8) {
     if (buf_idx > 0) {

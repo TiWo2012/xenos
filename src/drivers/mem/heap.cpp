@@ -23,8 +23,9 @@ void init(size_t size) {
   void *base = nullptr;
   while (num_pages > 0) {
     base = pmm::alloc_pages(num_pages);
-    if (base)
+    if (base) {
       break;
+    }
     num_pages--;
   }
   if (!base) {
@@ -33,8 +34,9 @@ void init(size_t size) {
   }
 
   size_t actual_size = num_pages * 4096;
-  for (size_t i = 0; i < actual_size; i += 4)
+  for (size_t i = 0; i < actual_size; i += 4) {
     *(volatile uint32_t *)((uintptr_t)base + i) = 0;
+  }
 
   head = (block *)base;
   head->size = actual_size;
@@ -47,8 +49,9 @@ void init(size_t size) {
 }
 
 void *alloc(size_t size) {
-  if (size == 0)
+  if (size == 0) {
     return nullptr;
+  }
 
   size = (size + 15) & ~15;
 
@@ -64,8 +67,9 @@ void *alloc(size_t size) {
           nb->free = true;
           nb->prev = cur;
           nb->next = cur->next;
-          if (cur->next)
+          if (cur->next) {
             cur->next->prev = nb;
+          }
           cur->next = nb;
           cur->size = BLOCK_HEADER_SIZE + size;
         }
@@ -81,8 +85,9 @@ void *alloc(size_t size) {
 }
 
 void free(void *ptr) {
-  if (!ptr)
+  if (!ptr) {
     return;
+  }
 
   block *b = (block *)((uint8_t *)ptr - BLOCK_HEADER_SIZE);
   b->free = true;
@@ -90,29 +95,33 @@ void free(void *ptr) {
   if (b->next && b->next->free) {
     b->size += b->next->size;
     b->next = b->next->next;
-    if (b->next)
+    if (b->next) {
       b->next->prev = b;
+    }
   }
 
   if (b->prev && b->prev->free) {
     b->prev->size += b->size;
     b->prev->next = b->next;
-    if (b->next)
+    if (b->next) {
       b->next->prev = b->prev;
+    }
   }
 }
 
 void *calloc(size_t num, size_t size) {
   size_t total = num * size;
   void *p = alloc(total);
-  if (p)
+  if (p) {
     utils::memory::memset(p, 0, total);
+  }
   return p;
 }
 
 void *realloc(void *ptr, size_t new_size) {
-  if (!ptr)
+  if (!ptr) {
     return alloc(new_size);
+  }
   if (new_size == 0) {
     free(ptr);
     return nullptr;
@@ -121,16 +130,19 @@ void *realloc(void *ptr, size_t new_size) {
   block *b = (block *)((uint8_t *)ptr - BLOCK_HEADER_SIZE);
   size_t old_size = b->size - BLOCK_HEADER_SIZE;
 
-  if (old_size >= new_size)
+  if (old_size >= new_size) {
     return ptr;
+  }
 
   void *new_ptr = alloc(new_size);
-  if (!new_ptr)
+  if (!new_ptr) {
     return nullptr;
+  }
 
   utils::memory::memset(new_ptr, 0, new_size);
-  for (size_t i = 0; i < old_size; i++)
+  for (size_t i = 0; i < old_size; i++) {
     ((uint8_t *)new_ptr)[i] = ((uint8_t *)ptr)[i];
+  }
 
   free(ptr);
   return new_ptr;

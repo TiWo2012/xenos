@@ -26,10 +26,11 @@ int vsprintf(char *s, const char *format, va_list args) {
 
     if (*f == 'd' || *f == 'u') {
       unsigned int val;
-      if (*f == 'd')
+      if (*f == 'd') {
         val = (unsigned int)va_arg(args, int);
-      else
+      } else {
         val = va_arg(args, unsigned int);
+      }
       char buf[32];
       int i = 0;
       if (val == 0) {

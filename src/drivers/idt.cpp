@@ -145,38 +145,43 @@ void pic_remap() {
 }
 
 void pic_eoi(uint8_t irq) {
-  if (irq >= 8)
+  if (irq >= 8) {
     outb(0xA0, 0x20);
+  }
 
   outb(0x20, 0x20);
 }
 void (*irq_handlers[16])() = {nullptr};
 
 void irq_register_handler(uint8_t irq, void (*handler)()) {
-  if (irq < 16)
+  if (irq < 16) {
     irq_handlers[irq] = handler;
+  }
 }
 
 void irq_dispatch(uint64_t int_no) {
   if (int_no >= 32 && int_no < 48) {
     uint8_t irq = int_no - 32;
     pic_eoi(irq);
-    if (irq_handlers[irq])
+    if (irq_handlers[irq]) {
       irq_handlers[irq]();
+    }
   }
 }
 
 void pic_unmask_irq(uint8_t irq) {
-  if (irq < 8)
+  if (irq < 8) {
     outb(0x21, inb(0x21) & ~(1 << irq));
-  else
+  } else {
     outb(0xA1, inb(0xA1) & ~(1 << (irq - 8)));
+  }
 }
 
 void pic_mask_irq(uint8_t irq) {
-  if (irq < 8)
+  if (irq < 8) {
     outb(0x21, inb(0x21) | (1 << irq));
-  else
+  } else {
     outb(0xA1, inb(0xA1) | (1 << (irq - 8)));
+  }
 }
 } // namespace idt
