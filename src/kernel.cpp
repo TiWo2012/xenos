@@ -57,12 +57,18 @@ extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
 
   vga::printf("welcome to xenos\n");
 
-  vga::color c;
-  c.r = 0xFF;
-  c.g = 0xA5;
-  c.b = 0x00;
-  c.a = 0xFF;
-  vga::put_pixel(100, 100, c);
+  vga::color colors[3];
+  colors[0].r = 0xFF; colors[0].g = 0x00; colors[0].b = 0x00; colors[0].a = 0xFF;
+  colors[1].r = 0x00; colors[1].g = 0xFF; colors[1].b = 0x00; colors[1].a = 0xFF;
+  colors[2].r = 0x00; colors[2].g = 0x00; colors[2].b = 0xFF; colors[2].a = 0xFF;
+
+  for (uint32_t y = 0; y < vga::fb_info.height; y++) {
+    for (uint32_t x = 0; x < vga::fb_info.width; x++) {
+      uint32_t stripe = (x * 3) / vga::fb_info.width;
+      vga::put_pixel(x, y, colors[stripe]);
+    }
+  }
+  serial::printf("stripes drawn\n");
 
   serial::printf("initializing terminal\n");
   terminal::init();
