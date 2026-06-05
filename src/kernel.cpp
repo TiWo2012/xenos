@@ -12,6 +12,7 @@
 extern "C" void test_iretq_asm(void);
 
 extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
+  vga::init(mb_info);
   vga::printf("clearing vga screen\n");
   serial::printf("clearing vga screen\n");
   vga::clear_scr();
@@ -55,6 +56,14 @@ extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
   pmm::init(mb_info);
 
   vga::printf("welcome to xenos\n");
+
+  vga::color c;
+  c.r = 0xFF;
+  c.g = 0xA5;
+  c.b = 0x00;
+  c.a = 0xFF;
+  vga::put_pixel(100, 100, c);
+
   serial::printf("initializing terminal\n");
   terminal::init();
 

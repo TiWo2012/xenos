@@ -1,4 +1,5 @@
 #include "vga.h"
+#include "serial.h"
 #include "../utils/string.h"
 #include "binio.h"
 #include <cstddef>
@@ -6,12 +7,60 @@
 
 namespace vga {
 
+framebuffer_info fb_info;
+volatile uint32_t* fb = nullptr;
+
 volatile char *vga = (volatile char *)0xB8000;
 
 struct vga_index {
   int x, y;
 };
 vga_index vga_idx;
+
+void init(uint32_t mb_info_addr) {
+  uint8_t* mb = (uint8_t*)(uint64_t)mb_info_addr;
+  uint32_t total_size = *(uint32_t*)mb;
+
+  uint32_t offset = 8;
+  while (offset + 8 <= total_size) {
+    uint32_t tag_type = *(uint32_t*)(mb + offset);
+    uint32_t tag_size = *(uint32_t*)(mb + offset + 4);
+
+    if (tag_type == 0) {
+      break;
+    }
+
+    if (tag_type == 8 && tag_size >= 32) {
+      fb_info.addr = *(uint64_t*)(mb + offset + 8);
+      fb_info.pitch = *(uint32_t*)(mb + offset + 16);
+      fb_info.width = *(uint32_t*)(mb + offset + 20);
+      fb_info.height = *(uint32_t*)(mb + offset + 24);
+      fb_info.bpp = *(uint8_t*)(mb + offset + 28);
+      fb = (volatile uint32_t*)fb_info.addr;
+
+      serial::printf("vga: found framebuffer\n");
+      serial::printf("vga: addr=0x%lx pitch=%u width=%u height=%u bpp=%u\n",
+                     fb_info.addr, fb_info.pitch,
+                     fb_info.width, fb_info.height, fb_info.bpp);
+    }
+
+    offset += tag_size;
+    if (offset & 7) {
+      offset = (offset + 7) & ~7;
+    }
+  }
+
+  if (!fb) {
+    serial::printf("vga: no framebuffer found, using text mode fallback\n");
+  }
+}
+
+void put_pixel(uint32_t x, uint32_t y, color c) {
+  (void)x;
+  (void)y;
+  (void)c;
+  serial::printf("putPixel\n");
+}
 
 static void update_cursor() {
   uint16_t pos = vga_idx.y * 80 + vga_idx.x;
