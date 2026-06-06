@@ -26,7 +26,9 @@ target_sources(kernel.elf
   PRIVATE
     FILE_SET CXX_MODULES
     BASE_DIRS ${CMAKE_SOURCE_DIR}/src
-    FILES ${CMAKE_SOURCE_DIR}/src/utils/string.cppm
+    FILES
+      ${CMAKE_SOURCE_DIR}/src/utils/string.cppm
+      ${CMAKE_SOURCE_DIR}/src/utils/memory.cppm
 )
 
 set_target_properties(kernel.elf PROPERTIES POSITION_INDEPENDENT_CODE OFF)

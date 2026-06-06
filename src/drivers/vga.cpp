@@ -1,7 +1,6 @@
 #include "vga.h"
 #include "font.h"
 import utils.string;
-#include "../utils/memory.h"
 #include "binio.h"
 #include "serial.h"
 #include <cstddef>

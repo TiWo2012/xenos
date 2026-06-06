@@ -1,6 +1,6 @@
 #include "heap.h"
 #include "../serial.h"
-#include "../utils/memory.h"
+import utils.memory;
 #include "pmm.h"
 
 namespace heap {

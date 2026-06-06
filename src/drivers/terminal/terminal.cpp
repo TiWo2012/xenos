@@ -4,7 +4,7 @@ import utils.string;
 #include "../mem/pmm.h"
 #include "../serial.h"
 #include "../vga.h"
-#include "memory.h"
+import utils.memory;
 #include <cstdint>
 
 namespace terminal {
