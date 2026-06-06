@@ -13,6 +13,7 @@ import vga;
 extern "C" void test_iretq_asm(void);
 
 extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
+  serial::init();
   vga::init(mb_info);
   vga::printf("clearing vga screen\n");
   serial::printf("clearing vga screen\n");
@@ -56,26 +57,14 @@ extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
   serial::printf("init pmm\n");
   pmm::init(mb_info);
 
-  vga::color white;
-  white.r = white.g = white.b = white.a = 0xFF;
-  vga::color black;
-  black.raw = 0;
-
-  const char *msg = "hello world";
-  uint32_t msg_x = 10;
-  uint32_t msg_y = 10;
-  for (int i = 0; msg[i] != '\0'; i++) {
-    vga::put_char(msg_x, msg_y, msg[i], white, black);
-    msg_x += 8;
-  }
-  serial::printf("hello world drawn\n");
-
   serial::printf("initializing terminal\n");
   terminal::init();
 
   serial::printf("init heap\n");
   size_t heap_size = pmm::free_frames() * 4096;
   heap::init(heap_size);
+
+  serial::printf("fully booted the os\n");
 
   while (true) {
     __asm__ __volatile__("hlt");

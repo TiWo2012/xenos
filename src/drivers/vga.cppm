@@ -1,8 +1,8 @@
 module;
 
-#include <stdint.h>
 #include <cstddef>
 #include <stdarg.h>
+#include <stdint.h>
 
 export module vga;
 
@@ -12,7 +12,6 @@ import binio;
 import serial;
 
 export namespace vga {
-
 union color {
   uint32_t raw;
   struct {
@@ -58,10 +57,14 @@ namespace vga {
 
 volatile char *vga_mem = (volatile char *)0xB8000;
 
-struct vga_index { int x, y; };
+struct vga_index {
+  int x, y;
+};
 vga_index vga_idx;
 
-struct fb_cursor { uint32_t x, y; };
+struct fb_cursor {
+  uint32_t x, y;
+};
 fb_cursor fb_cur;
 
 color fb_fg;
@@ -353,7 +356,6 @@ void clear_scr() {
   fb_cur.y = 0;
 }
 
-void set_cursor_visible() {
-}
+void set_cursor_visible() {}
 
 } // namespace vga

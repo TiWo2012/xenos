@@ -34,6 +34,7 @@ void write_char(char c) {
   const uint16_t COM1 = 0x3F8;
 
   while ((inb(COM1 + 5) & 0x20) == 0) {
+    outb(0x80, 0);
   }
 
   outb(COM1, (uint8_t)c);

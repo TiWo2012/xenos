@@ -3,8 +3,3 @@ CompileFlags:
 
 Index:
   Background: Build
----
-If:
-  PathMatch: .*\.cppm
-CompileFlags:
-  Add: ["-fmodules", "-fimplicit-module-maps"]

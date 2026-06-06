@@ -33,35 +33,59 @@ struct block {
 
 static block *head = nullptr;
 
+static void insert_sorted(block *b) {
+  block *cur = head;
+  while (cur) {
+    if ((uintptr_t)b < (uintptr_t)cur) {
+      b->prev = cur->prev;
+      b->next = cur;
+      if (cur->prev) {
+        cur->prev->next = b;
+      } else {
+        head = b;
+      }
+      cur->prev = b;
+      return;
+    }
+    cur = cur->next;
+  }
+  b->prev = nullptr;
+  b->next = head;
+  if (head) {
+    head->prev = b;
+  }
+  head = b;
+}
+
 void init(size_t size) {
-  serial::printf("heap: requesting %u bytes from pmm\n", (uint32_t)size);
+  size_t max_pages = 1024;
   size_t num_pages = (size + 4095) / 4096;
-  void *base = nullptr;
-  while (num_pages > 0) {
-    base = pmm::alloc_pages(num_pages);
-    if (base) {
+  if (num_pages > max_pages) {
+    num_pages = max_pages;
+  }
+
+  serial::printf("heap: requesting %u pages\n", (uint32_t)num_pages);
+
+  head = nullptr;
+  size_t actual_size = 0;
+
+  for (size_t p = 0; p < num_pages; p++) {
+    void *page = pmm::alloc_page();
+    if (!page) {
       break;
     }
-    num_pages--;
-  }
-  if (!base) {
-    serial::printf("heap: ERROR - pmm out of memory\n");
-    return;
-  }
-
-  size_t actual_size = num_pages * 4096;
-  for (size_t i = 0; i < actual_size; i += 4) {
-    *(volatile uint32_t *)((uintptr_t)base + i) = 0;
+    for (size_t i = 0; i < 4096; i += 4) {
+      *(volatile uint32_t *)((uintptr_t)page + i) = 0;
+    }
+    block *b = (block *)page;
+    b->size = 4096;
+    b->free = true;
+    insert_sorted(b);
+    actual_size += 4096;
   }
 
-  head = (block *)base;
-  head->size = actual_size;
-  head->free = true;
-  head->prev = nullptr;
-  head->next = nullptr;
-
-  serial::printf("heap: init done, base=0x%lx, size=%u (%u pages)\n",
-                 (uint64_t)head, (uint32_t)actual_size, (uint32_t)num_pages);
+  serial::printf("heap: init done, %u pages (%u bytes)\n",
+                 (uint32_t)(actual_size / 4096), (uint32_t)actual_size);
 }
 
 void *alloc(size_t size) {
