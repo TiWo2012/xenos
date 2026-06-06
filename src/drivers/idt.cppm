@@ -1,7 +1,57 @@
-// idt.cpp
-#include "idt.h"
-import binio;
+module;
+
 #include <stdint.h>
+
+export module idt;
+
+import binio;
+
+extern "C" void isr0();
+extern "C" void isr1();
+extern "C" void isr2();
+extern "C" void isr3();
+extern "C" void isr4();
+extern "C" void isr5();
+extern "C" void isr6();
+extern "C" void isr7();
+extern "C" void isr8();
+extern "C" void isr9();
+extern "C" void isr10();
+extern "C" void isr11();
+extern "C" void isr12();
+extern "C" void isr13();
+extern "C" void isr14();
+extern "C" void isr15();
+extern "C" void isr16();
+extern "C" void isr17();
+extern "C" void isr18();
+extern "C" void isr19();
+extern "C" void isr20();
+extern "C" void isr21();
+extern "C" void isr22();
+extern "C" void isr23();
+extern "C" void isr24();
+extern "C" void isr25();
+extern "C" void isr26();
+extern "C" void isr27();
+extern "C" void isr28();
+extern "C" void isr29();
+extern "C" void isr30();
+extern "C" void isr31();
+extern "C" void isr32();
+extern "C" void isr33();
+
+export namespace idt {
+
+void init();
+void pic_remap();
+void pic_eoi(uint8_t irq);
+void pic_unmask_irq(uint8_t irq);
+void pic_mask_irq(uint8_t irq);
+void irq_register_handler(uint8_t irq, void (*handler)());
+void irq_dispatch(uint64_t int_no);
+
+} // namespace idt
 
 namespace idt {
 
@@ -20,42 +70,7 @@ struct IDTPointer {
   uint64_t base;
 } __attribute__((packed));
 
-extern "C" {
-void isr0();
-void isr1();
-void isr2();
-void isr3();
-void isr4();
-void isr5();
-void isr6();
-void isr7();
-void isr8();
-void isr9();
-void isr10();
-void isr11();
-void isr12();
-void isr13();
-void isr14();
-void isr15();
-void isr16();
-void isr17();
-void isr18();
-void isr19();
-void isr20();
-void isr21();
-void isr22();
-void isr23();
-void isr24();
-void isr25();
-void isr26();
-void isr27();
-void isr28();
-void isr29();
-void isr30();
-void isr31();
-void isr32();
-void isr33();
-}
+extern "C" void load_idt(IDTPointer *);
 
 IDTEntry idt[256];
 IDTPointer idt_ptr;
@@ -64,15 +79,13 @@ static void set_idt_entry(int n, void (*handler)()) {
   uint64_t addr = (uint64_t)handler;
 
   idt[n].offset_low = addr & 0xFFFF;
-  idt[n].selector = 0x08; // kernel code segment
+  idt[n].selector = 0x08;
   idt[n].ist = 0;
-  idt[n].type_attr = 0x8E; // present, ring 0, interrupt gate
+  idt[n].type_attr = 0x8E;
   idt[n].offset_mid = (addr >> 16) & 0xFFFF;
   idt[n].offset_high = (addr >> 32) & 0xFFFFFFFF;
   idt[n].zero = 0;
 }
-
-extern "C" void load_idt(IDTPointer *);
 
 void init() {
   idt_ptr.limit = sizeof(idt) - 1;
@@ -119,27 +132,21 @@ void init() {
 void pic_remap() {
   uint8_t a1, a2;
 
-  // save masks
   asm volatile("inb %1, %0" : "=a"(a1) : "Nd"(0x21));
   asm volatile("inb %1, %0" : "=a"(a2) : "Nd"(0xA1));
 
-  // start initialization
   outb(0x20, 0x11);
   outb(0xA0, 0x11);
 
-  // set vector offsets
-  outb(0x21, 0x20); // master -> 32
-  outb(0xA1, 0x28); // slave -> 40
+  outb(0x21, 0x20);
+  outb(0xA1, 0x28);
 
-  // tell master about slave at IRQ2
   outb(0x21, 0x04);
   outb(0xA1, 0x02);
 
-  // set 8086 mode
   outb(0x21, 0x01);
   outb(0xA1, 0x01);
 
-  // restore masks
   outb(0x21, a1);
   outb(0xA1, a2);
 }
@@ -151,6 +158,7 @@ void pic_eoi(uint8_t irq) {
 
   outb(0x20, 0x20);
 }
+
 void (*irq_handlers[16])() = {nullptr};
 
 void irq_register_handler(uint8_t irq, void (*handler)()) {
@@ -184,4 +192,5 @@ void pic_mask_irq(uint8_t irq) {
     outb(0xA1, inb(0xA1) | (1 << (irq - 8)));
   }
 }
+
 } // namespace idt

@@ -1,7 +1,7 @@
 #include "heap.h"
 import serial;
 import utils.memory;
-#include "pmm.h"
+import pmm;
 
 namespace heap {
 

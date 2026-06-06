@@ -1,9 +1,9 @@
 import binio;
-#include "drivers/idt.h"
+import idt;
 #include "drivers/irq/kbd.h"
-#include "drivers/irq/pit.h"
+import irq.pit;
 #include "drivers/mem/heap.h"
-#include "drivers/mem/pmm.h"
+import pmm;
 import serial;
 #include "drivers/terminal/terminal.h"
 import vga;

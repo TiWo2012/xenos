@@ -1,5 +1,5 @@
 // isr.cpp
-#include "idt.h"
+import idt;
 import serial;
 #include <stdint.h>
 

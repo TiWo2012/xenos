@@ -1,7 +1,7 @@
 #include "terminal.h"
 import utils.string;
 #include "../mem/heap.h"
-#include "../mem/pmm.h"
+import pmm;
 import serial;
 import vga;
 import utils.memory;

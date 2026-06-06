@@ -1,8 +1,26 @@
-#include "pmm.h"
+module;
+
+#include <cstdint>
+#include <cstddef>
+
+export module pmm;
+
 import serial;
 
 extern "C" uintptr_t KERNEL_START;
 extern "C" uintptr_t KERNEL_END;
+
+export namespace pmm {
+
+void init(uint32_t mb_info);
+void* alloc_page();
+void free_page(void* phys);
+void* alloc_pages(size_t n);
+
+size_t total_frames();
+size_t free_frames();
+
+} // namespace pmm
 
 namespace pmm {
 
@@ -208,4 +226,4 @@ void* alloc_pages(size_t n) {
 size_t total_frames() { return MAX_FRAMES; }
 size_t free_frames() { return MAX_FRAMES - used_frames; }
 
-}
+} // namespace pmm
