@@ -1,6 +1,6 @@
 #include "vga.h"
 #include "font.h"
-#include "../utils/string.h"
+import utils.string;
 #include "../utils/memory.h"
 #include "binio.h"
 #include "serial.h"

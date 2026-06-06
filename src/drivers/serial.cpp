@@ -1,5 +1,5 @@
 #include "serial.h"
-#include "../utils/string.h"
+import utils.string;
 #include "binio.h"
 #include <cstdint>
 #include <stdarg.h>

@@ -1,5 +1,5 @@
 #include "terminal.h"
-#include "../../utils/string.h"
+import utils.string;
 #include "../mem/heap.h"
 #include "../mem/pmm.h"
 #include "../serial.h"
