@@ -1,5 +1,5 @@
 #include "pit.h"
-#include "../binio.h"
+import binio;
 #include "../serial.h"
 #include <cstdint>
 

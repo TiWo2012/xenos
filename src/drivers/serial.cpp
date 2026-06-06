@@ -1,6 +1,6 @@
 #include "serial.h"
 import utils.string;
-#include "binio.h"
+import binio;
 #include <cstdint>
 #include <stdarg.h>
 

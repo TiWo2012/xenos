@@ -1,4 +1,4 @@
-#include "drivers/binio.h"
+import binio;
 #include "drivers/idt.h"
 #include "drivers/irq/kbd.h"
 #include "drivers/irq/pit.h"

@@ -1,6 +1,6 @@
 // idt.cpp
 #include "idt.h"
-#include "binio.h"
+import binio;
 #include <stdint.h>
 
 namespace idt {

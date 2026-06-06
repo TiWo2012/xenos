@@ -1,5 +1,5 @@
 #include "kbd.h"
-#include "../binio.h"
+import binio;
 #include "../serial.h"
 #include "../terminal/terminal.h"
 #include <cstdint>
