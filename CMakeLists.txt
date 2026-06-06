@@ -6,6 +6,8 @@ set(CMAKE_LINKER ld.lld CACHE STRING "Linker" FORCE)
 
 project(xenos LANGUAGES CXX ASM_NASM)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 if(POLICY CMP0156)
   cmake_policy(SET CMP0156 NEW)
 endif()

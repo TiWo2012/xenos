@@ -1,8 +1,10 @@
 CompileFlags:
-  Add: [
-    "-std=gnu++23",
-    "-ffreestanding",
-    "-fno-exceptions",
-    "-fno-rtti",
-    "-m64"
-  ]
+  CompilationDatabase: build
+
+Index:
+  Background: Build
+---
+If:
+  PathMatch: .*\.cppm
+CompileFlags:
+  Add: ["-fmodules", "-fimplicit-module-maps"]
