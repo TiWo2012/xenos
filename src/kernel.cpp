@@ -2,11 +2,12 @@ import binio;
 import idt;
 #include "drivers/irq/kbd.h"
 import irq.pit;
-#include "drivers/mem/heap.h"
+import heap;
 import pmm;
 import serial;
 #include "drivers/terminal/terminal.h"
 import vga;
+#include <cstddef>
 #include <stdint.h>
 
 extern "C" void test_iretq_asm(void);

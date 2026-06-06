@@ -1,7 +1,23 @@
-#include "heap.h"
+module;
+
+#include <cstdint>
+#include <cstddef>
+
+export module heap;
+
 import serial;
 import utils.memory;
 import pmm;
+
+export namespace heap {
+
+void init(size_t size);
+void* alloc(size_t size);
+void free(void* ptr);
+void* calloc(size_t num, size_t size);
+void* realloc(void* ptr, size_t new_size);
+
+} // namespace heap
 
 namespace heap {
 

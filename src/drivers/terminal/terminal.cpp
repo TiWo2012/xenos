@@ -1,10 +1,10 @@
 #include "terminal.h"
 import utils.string;
-#include "../mem/heap.h"
 import pmm;
 import serial;
 import vga;
 import utils.memory;
+#include <cstddef>
 #include <cstdint>
 
 namespace terminal {
