@@ -1,12 +1,24 @@
-#include "kbd.h"
+module;
+
+#include <cstdint>
+
+export module irq.kbd;
+
 import binio;
 import serial;
-#include "../terminal/terminal.h"
-#include <cstdint>
+import terminal;
+
+export namespace irq {
+namespace kbd {
+
+void kbd_init();
+void keyboard_handler();
+
+} // namespace kbd
+} // namespace irq
 
 namespace irq {
 namespace kbd {
-#define DEBUG_KBD_SCANCODE false
 
 void kbd_init() {
   serial::write_string("kbd_init (stub)\n");
@@ -20,21 +32,12 @@ void kbd_init() {
 }
 
 void keyboard_handler() {
-#if DEBUG_KBD_SCANCODE
-  serial::write_string("kbd fired: ");
-#endif
-
   uint8_t scancode;
 
   scancode = inb(0x60);
 
-#if DEBUG_KBD_SCANCODE
-  serial::write_string("scancode(");
-  serial::print_hex(scancode);
-  serial::write_string(")\n");
-#endif
-
   terminal::send_key(scancode);
 }
+
 } // namespace kbd
 } // namespace irq

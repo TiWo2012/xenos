@@ -1,11 +1,11 @@
 import binio;
 import idt;
-#include "drivers/irq/kbd.h"
+import irq.kbd;
 import irq.pit;
 import heap;
 import pmm;
 import serial;
-#include "drivers/terminal/terminal.h"
+import terminal;
 import vga;
 #include <cstddef>
 #include <stdint.h>
