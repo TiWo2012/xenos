@@ -19,8 +19,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -g -O0 -ffreestanding -fno
 
 file(GLOB_RECURSE CPP_SOURCES src/*.cpp)
 file(GLOB_RECURSE ASM_SOURCES src/*.asm)
+file(GLOB_RECURSE MODULE_SOURCES src/*.cppm)
 
-add_executable(kernel.elf ${CPP_SOURCES} ${ASM_SOURCES})
+add_executable(kernel.elf ${CPP_SOURCES} ${ASM_SOURCES} ${MODULE_SOURCES})
 
 target_sources(kernel.elf
   PRIVATE

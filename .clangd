@@ -1,9 +1,8 @@
 CompileFlags:
   Add: [
-    "-std=c++23",
+    "-std=gnu++23",
     "-ffreestanding",
     "-fno-exceptions",
     "-fno-rtti",
-    "-nostdlib",
     "-m64"
   ]

@@ -61,7 +61,7 @@ extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
   vga::color black;
   black.raw = 0;
 
-  const char* msg = "hello world";
+  const char *msg = "hello world";
   uint32_t msg_x = 10;
   uint32_t msg_y = 10;
   for (int i = 0; msg[i] != '\0'; i++) {
