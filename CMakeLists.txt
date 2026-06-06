@@ -30,6 +30,9 @@ target_sources(kernel.elf
       ${CMAKE_SOURCE_DIR}/src/utils/string.cppm
       ${CMAKE_SOURCE_DIR}/src/utils/memory.cppm
       ${CMAKE_SOURCE_DIR}/src/drivers/binio.cppm
+      ${CMAKE_SOURCE_DIR}/src/drivers/serial.cppm
+      ${CMAKE_SOURCE_DIR}/src/drivers/font.cppm
+      ${CMAKE_SOURCE_DIR}/src/drivers/vga.cppm
 )
 
 set_target_properties(kernel.elf PROPERTIES POSITION_INDEPENDENT_CODE OFF)

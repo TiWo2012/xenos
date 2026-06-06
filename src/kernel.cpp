@@ -4,9 +4,9 @@ import binio;
 #include "drivers/irq/pit.h"
 #include "drivers/mem/heap.h"
 #include "drivers/mem/pmm.h"
-#include "drivers/serial.h"
+import serial;
 #include "drivers/terminal/terminal.h"
-#include "drivers/vga.h"
+import vga;
 #include <stdint.h>
 
 extern "C" void test_iretq_asm(void);

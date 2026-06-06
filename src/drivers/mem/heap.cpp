@@ -1,5 +1,5 @@
 #include "heap.h"
-#include "../serial.h"
+import serial;
 import utils.memory;
 #include "pmm.h"
 

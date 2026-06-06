@@ -1,30 +1,119 @@
-#include "vga.h"
-#include "font.h"
-import utils.string;
-import binio;
-#include "serial.h"
+module;
+
+#include <stdint.h>
 #include <cstddef>
 #include <stdarg.h>
 
+export module vga;
+
+import font;
+import utils.string;
+import binio;
+import serial;
+
+export namespace vga {
+
+union color {
+  uint32_t raw;
+  struct {
+    uint8_t b;
+    uint8_t g;
+    uint8_t r;
+    uint8_t a;
+  };
+};
+
+struct framebuffer_info {
+  uint64_t addr;
+  uint32_t pitch;
+  uint32_t width;
+  uint32_t height;
+  uint8_t bpp;
+};
+
+extern framebuffer_info fb_info;
+extern volatile uint32_t *fb;
+
+void init(uint32_t mb_info_addr);
+void put_pixel(uint32_t x, uint32_t y, color c);
+void put_char(uint32_t x, uint32_t y, char c, color fg, color bg);
+
+void __dep__write_char(char c);
+void __dep__write_string(const char *s);
+void __dep__printf(const char *format, ...);
+void __dep__backspace();
+void __dep__clear_scr();
+void __dep__set_cursor_visible();
+
+void write_char(char c);
+void write_string(const char *s);
+void printf(const char *format, ...);
+void backspace();
+void clear_scr();
+void set_cursor_visible();
+
+} // namespace vga
+
 namespace vga {
 
-framebuffer_info fb_info;
-volatile uint32_t *fb = nullptr;
+volatile char *vga_mem = (volatile char *)0xB8000;
 
-volatile char *vga = (volatile char *)0xB8000;
-
-struct vga_index {
-  int x, y;
-};
+struct vga_index { int x, y; };
 vga_index vga_idx;
 
-struct fb_cursor {
-  uint32_t x, y;
-};
+struct fb_cursor { uint32_t x, y; };
 fb_cursor fb_cur;
 
 color fb_fg;
 color fb_bg;
+
+framebuffer_info fb_info;
+volatile uint32_t *fb = nullptr;
+
+} // namespace vga
+
+// --- static helpers ---
+
+namespace vga {
+
+static void update_cursor() {
+  uint16_t pos = vga_idx.y * 80 + vga_idx.x;
+  outb(0x3D4, 0x0F);
+  outb(0x3D5, pos & 0xFF);
+  outb(0x3D4, 0x0E);
+  outb(0x3D5, (pos >> 8) & 0xFF);
+}
+
+static void set_cursor_shape(uint8_t start, uint8_t end) {
+  outb(0x3D4, 0x0A);
+  outb(0x3D5, start);
+  outb(0x3D4, 0x0B);
+  outb(0x3D5, end);
+}
+
+static void fb_scroll() {
+  uint32_t pitch32 = fb_info.pitch / 4;
+  uint32_t rows = fb_info.height;
+  uint32_t scroll_rows = 16;
+
+  for (uint32_t y = 0; y < rows - scroll_rows; y++) {
+    for (uint32_t x = 0; x < fb_info.width; x++) {
+      fb[y * pitch32 + x] = fb[(y + scroll_rows) * pitch32 + x];
+    }
+  }
+
+  for (uint32_t y = rows - scroll_rows; y < rows; y++) {
+    for (uint32_t x = 0; x < fb_info.width; x++) {
+      fb[y * pitch32 + x] = 0;
+    }
+  }
+}
+
+} // namespace vga
+
+// --- function definitions ---
+
+namespace vga {
 
 void init(uint32_t mb_info_addr) {
   uint8_t *mb = (uint8_t *)(uint64_t)mb_info_addr;
@@ -94,23 +183,6 @@ void put_char(uint32_t x, uint32_t y, char c, color fg, color bg) {
   }
 }
 
-static void update_cursor() {
-  uint16_t pos = vga_idx.y * 80 + vga_idx.x;
-  outb(0x3D4, 0x0F);
-  outb(0x3D5, pos & 0xFF);
-  outb(0x3D4, 0x0E);
-  outb(0x3D5, (pos >> 8) & 0xFF);
-}
-
-static void set_cursor_shape(uint8_t start, uint8_t end) {
-  outb(0x3D4, 0x0A);
-  outb(0x3D5, start);
-  outb(0x3D4, 0x0B);
-  outb(0x3D5, end);
-}
-
-// y * 80 * x
-
 void __dep__write_char(char c) {
   if (c == '\n') {
     vga_idx.x = 0;
@@ -124,8 +196,8 @@ void __dep__write_char(char c) {
     return;
   }
 
-  vga[(vga_idx.y * 80 + vga_idx.x) * 2] = c;
-  vga[(vga_idx.y * 80 + vga_idx.x) * 2 + 1] = 0x0F;
+  vga_mem[(vga_idx.y * 80 + vga_idx.x) * 2] = c;
+  vga_mem[(vga_idx.y * 80 + vga_idx.x) * 2 + 1] = 0x0F;
 
   vga_idx.x++;
 
@@ -135,7 +207,7 @@ void __dep__write_char(char c) {
   }
 
   if (vga_idx.y >= 25) {
-    vga_idx.y = 0; // temporary
+    vga_idx.y = 0;
   }
 
   update_cursor();
@@ -153,8 +225,8 @@ void __dep__backspace() {
     vga_idx.x--;
   }
 
-  vga[(vga_idx.y * 80 + vga_idx.x) * 2] = ' ';
-  vga[(vga_idx.y * 80 + vga_idx.x) * 2 + 1] = 0x0F;
+  vga_mem[(vga_idx.y * 80 + vga_idx.x) * 2] = ' ';
+  vga_mem[(vga_idx.y * 80 + vga_idx.x) * 2 + 1] = 0x0F;
 
   update_cursor();
 }
@@ -176,8 +248,8 @@ void __dep__printf(const char *format, ...) {
 
 void __dep__clear_scr() {
   for (size_t i = 0; i < 80 * 25; i++) {
-    vga[i * 2] = ' ';
-    vga[i * 2 + 1] = 0x0F;
+    vga_mem[i * 2] = ' ';
+    vga_mem[i * 2 + 1] = 0x0F;
   }
 
   vga_idx.x = vga_idx.y = 0;
@@ -189,24 +261,6 @@ void __dep__clear_scr() {
 void __dep__set_cursor_visible() {
   set_cursor_shape(0, 15);
   update_cursor();
-}
-
-static void fb_scroll() {
-  uint32_t pitch32 = fb_info.pitch / 4;
-  uint32_t rows = fb_info.height;
-  uint32_t scroll_rows = 16;
-
-  for (uint32_t y = 0; y < rows - scroll_rows; y++) {
-    for (uint32_t x = 0; x < fb_info.width; x++) {
-      fb[y * pitch32 + x] = fb[(y + scroll_rows) * pitch32 + x];
-    }
-  }
-
-  for (uint32_t y = rows - scroll_rows; y < rows; y++) {
-    for (uint32_t x = 0; x < fb_info.width; x++) {
-      fb[y * pitch32 + x] = 0;
-    }
-  }
 }
 
 void write_char(char c) {

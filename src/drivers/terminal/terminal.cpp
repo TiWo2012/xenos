@@ -2,8 +2,8 @@
 import utils.string;
 #include "../mem/heap.h"
 #include "../mem/pmm.h"
-#include "../serial.h"
-#include "../vga.h"
+import serial;
+import vga;
 import utils.memory;
 #include <cstdint>
 

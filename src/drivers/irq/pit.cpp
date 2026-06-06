@@ -1,6 +1,6 @@
 #include "pit.h"
 import binio;
-#include "../serial.h"
+import serial;
 #include <cstdint>
 
 namespace irq {

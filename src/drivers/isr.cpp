@@ -1,6 +1,6 @@
 // isr.cpp
 #include "idt.h"
-#include "serial.h"
+import serial;
 #include <stdint.h>
 
 // match EXACT push order (reverse of pops!)

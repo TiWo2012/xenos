@@ -1,5 +1,5 @@
 #include "pmm.h"
-#include "../drivers/serial.h"
+import serial;
 
 extern "C" uintptr_t KERNEL_START;
 extern "C" uintptr_t KERNEL_END;

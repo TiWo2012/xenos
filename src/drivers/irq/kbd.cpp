@@ -1,6 +1,6 @@
 #include "kbd.h"
 import binio;
-#include "../serial.h"
+import serial;
 #include "../terminal/terminal.h"
 #include <cstdint>
 
