@@ -1,9 +1,10 @@
 # Xenos
 
-A hobby x86-64 operating system kernel written from scratch in C++23 and NASM assembly. Boots via GRUB (Multiboot2), runs in long mode with 4-level paging, and provides an interactive shell over VGA text mode.
+A hobby x86-64 operating system kernel written from scratch in C++23 (using C++20 modules) and NASM assembly. Boots via GRUB (Multiboot2), runs in long mode with 4-level paging, and provides an interactive shell over VGA text mode.
 
 ## Features
 
+- **C++20 modules** — fully migrated from headers; each driver is a standalone `.cppm` module
 - **Multiboot2** — boots via GRUB with standard header
 - **Long mode (64-bit)** — 4-level paging with 2 MB huge pages, identity-mapping the first 1 GB
 - **GDT** — kernel code (ring 0) and data segments
@@ -23,6 +24,8 @@ A hobby x86-64 operating system kernel written from scratch in C++23 and NASM as
 ## Prerequisites
 
 - clang++ (C++23)
+- cmake (3.28+)
+- ninja
 - nasm
 - ld.lld
 - grub-mkrescue
@@ -31,44 +34,43 @@ A hobby x86-64 operating system kernel written from scratch in C++23 and NASM as
 ## Build & Run
 
 ```sh
-make          # build kernel ISO
-make run      # build and boot in QEMU (serial console on stdio)
-make clean    # remove build artifacts
-make tags     # generate ctags
+./run.sh   # configure (Ninja), build, and boot in QEMU
 ```
 
-The `run` target boots the kernel in QEMU with the serial port connected to stdio, so all serial debug output appears in your terminal. The VGA console is also visible in the QEMU window.
+The kernel boots in QEMU with the serial port connected to stdio, so all serial debug output appears in your terminal. The VGA console is also visible in the QEMU window.
 
 ## Project Structure
 
 ```
-├── Makefile                   # Build system (clang++, nasm, ld.lld)
-├── linker.ld                  # Linker script (kernel at 1M physical)
-├── grub.cfg                   # GRUB boot menu config source
-├── test.py                    # Generate ISR extern declarations
+├── CMakeLists.txt              # Build system (CMake + Ninja, clang/lld/nasm)
+├── run.sh                      # One-step configure, build, boot
+├── linker.ld                   # Linker script (kernel at 1M physical)
+├── grub.cfg                    # GRUB boot menu config source
+├── test.py                     # Generate ISR extern declarations
 ├── src/
-│   ├── entry.asm              # Multiboot2 header, long-mode init, paging, GDT
-│   ├── boot.cpp               # C++ wrapper: calls kernel_main
-│   ├── kernel.cpp             # Kernel init: PIC, IDT, PIT, KBD, PMM, heap, terminal
-│   └── drivers/
-│       ├── binio.h/.cpp       # Port I/O (inb/outb)
-│       ├── vga.h/.cpp         # VGA text-mode driver (80×25, hardware cursor, printf)
-│       ├── serial.h/.cpp      # Serial COM1 driver (38400 8N1, loopback test, printf)
-│       ├── idt.h/.cpp         # IDT setup, PIC management, IRQ dispatch
-│       ├── idtl.asm           # Assembly ISR stubs (32 hand-written), load_idt, iretq test
-│       ├── isr.cpp            # C++ exception handler with full register dump
-│       ├── irq/
-│       │   ├── pit.h/.cpp     # PIT timer (1000 Hz)
-│       │   └── kbd.h/.cpp     # PS/2 keyboard (scancode set 1, US ANSI)
-│       ├── terminal/
-│       │   ├── terminal.h/.cpp    # Interactive shell (clear, exit, mem)
-│       │   └── asm_shutdown.asm   # ACPI power-off
-│       └── mem/
-│           ├── pmm.h/.cpp     # Physical memory manager (bitmap, 4 GB max)
-│           └── heap.h/.cpp    # Kernel heap (linked-list, splitting, coalescing)
-└── utils/
-    ├── memory.h/.cpp          # memset (freestanding)
-    └── string.h/.cpp          # strcmp, vsprintf, sprintf (freestanding)
+│   ├── entry.asm               # Multiboot2 header, long-mode init, paging, GDT
+│   ├── boot.cpp                # C++ wrapper: calls kernel_main (no imports)
+│   ├── kernel.cpp              # Kernel init: imports all modules, calls init sequence
+│   ├── drivers/
+│   │   ├── binio.cppm          # Module `binio`: port I/O (inb/outb)
+│   │   ├── font.cppm           # Module `font`: VGA 8×16 font bitmap
+│   │   ├── vga.cppm            # Module `vga`: VGA text-mode driver (80×25, cursor, printf)
+│   │   ├── serial.cppm         # Module `serial`: COM1 driver (38400 8N1, printf)
+│   │   ├── idt.cppm            # Module `idt`: IDT setup, PIC management, IRQ dispatch
+│   │   ├── idtl.asm            # Assembly ISR stubs (32 hand-written), load_idt, iretq test
+│   │   ├── isr.cpp             # C++ exception handler with full register dump (imports idt, serial)
+│   │   ├── irq/
+│   │   │   ├── pit.cppm        # Module `irq.pit`: PIT timer (1000 Hz)
+│   │   │   └── kbd.cppm        # Module `irq.kbd`: PS/2 keyboard (scancode set 1, US ANSI)
+│   │   ├── terminal/
+│   │   │   ├── terminal.cppm   # Module `terminal`: interactive shell (clear, exit, mem)
+│   │   │   └── asm_shutdown.asm# ACPI power-off
+│   │   └── mem/
+│   │       ├── pmm.cppm        # Module `pmm`: physical memory manager (bitmap, 4 GB max)
+│   │       └── heap.cppm       # Module `heap`: kernel heap (linked-list, split, coalesce)
+│   └── utils/
+│       ├── memory.cppm         # Module `utils.memory`: memset (freestanding)
+│       └── string.cppm         # Module `utils.string`: strcmp, vsprintf, sprintf
 ```
 
 ## Architecture
@@ -139,44 +141,78 @@ In `kernel_main`:
 
 ## Build System
 
-The Makefile uses `find` for automatic source discovery and `-MMD -MP` for dependency tracking.
+The project uses **CMake** (3.28+) with the **Ninja** generator, Clang, NASM, and LLD.
 
-- `make compile_commands.json` — generates a `compile_commands.json` for clangd LSP (requires `bear`)
-- `os.iso` is produced by `grub-mkrescue`
+- Module sources (`.cppm`) are registered as a `FILE_SET CXX_MODULES` in `CMakeLists.txt`, enabling Clang's module support
+- `./run.sh` runs `cmake --fresh -B build -G Ninja` then `cmake --build build --target run`
+- `os.iso` is produced by `grub-mkrescue` via a custom CMake target
 - QEMU is invoked with `-cdrom os.iso -serial stdio`
 
-## Kernel API
+## Module API
 
-### I/O (`drivers/binio.h`)
-- `outb(port, val)` / `inb(port)` — byte port I/O
+### `binio`
+```cpp
+import binio;
+outb(port, val); inb(port);
+```
 
-### VGA (`drivers/vga.h`)
-- `vga::write_char`, `vga::write_string`, `vga::printf` — text output
-- `vga::backspace`, `vga::clear_scr`, `vga::set_cursor_visible` — cursor/screen control
+### `vga`
+```cpp
+import vga;
+vga::write_char, vga::write_string, vga::printf;
+vga::backspace, vga::clear_scr, vga::set_cursor_visible;
+```
 
-### Serial (`drivers/serial.h`)
-- `serial::printf`, `serial::write_char`, `serial::write_string` — serial output
-- `serial::print_hex`, `serial::write_dec` — numeric output
+### `serial`
+```cpp
+import serial;
+serial::printf, serial::write_char, serial::write_string;
+serial::print_hex, serial::write_dec;
+```
 
-### IDT (`drivers/idt.h`)
-- `idt::init`, `idt::pic_remap`, `idt::pic_eoi`
-- `idt::irq_register_handler(irq, callback)`
+### `idt`
+```cpp
+import idt;
+idt::init, idt::pic_remap, idt::pic_eoi;
+idt::irq_register_handler(irq, callback);
+```
 
-### PMM (`drivers/mem/pmm.h`)
-- `pmm::init(mb_info)` — parse multiboot info and init bitmap
-- `pmm::alloc_page`, `pmm::free_page`, `pmm::alloc_pages`
-- `pmm::total_frames`, `pmm::free_frames`
+### `pmm`
+```cpp
+import pmm;
+pmm::init(mb_info);
+pmm::alloc_page, pmm::free_page, pmm::alloc_pages;
+pmm::total_frames, pmm::free_frames;
+```
 
-### Heap (`drivers/mem/heap.h`)
-- `heap::init(size)`, `heap::alloc(size)`, `heap::free(ptr)`
-- `heap::calloc(num, size)`, `heap::realloc(ptr, new_size)`
+### `heap`
+```cpp
+import heap;
+heap::init(size), heap::alloc(size), heap::free(ptr);
+heap::calloc(num, size), heap::realloc(ptr, new_size);
+```
 
-### Terminal (`drivers/terminal/terminal.h`)
-- `terminal::init()` — start the shell
-- `terminal::send_key(scancode)` — feed a scancode (called by the keyboard IRQ handler)
+### `terminal`
+```cpp
+import terminal;
+terminal::init();
+terminal::send_key(scancode);
+```
 
-### String utils (`utils/string.h`)
-- `utils::string::strcmp`, `utils::string::sprintf`, `utils::string::vsprintf`
+### `utils.string`
+```cpp
+import utils.string;
+utils::string::strcmp, utils::string::sprintf, utils::string::vsprintf;
+```
+
+### `irq.pit` / `irq.kbd`
+```cpp
+import irq.pit;
+irq::pit::pit_init(); irq::pit::timer_handler();
+
+import irq.kbd;
+irq::kbd::kbd_init(); irq::kbd::keyboard_handler();
+```
 
 ## License
 
