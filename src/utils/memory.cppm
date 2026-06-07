@@ -10,5 +10,5 @@ void *memset(void *p, int v, int n) {
   return p;
 }
 
-}
-}
+} // namespace memory
+} // namespace utils

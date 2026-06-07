@@ -1,3 +1,4 @@
+#include <cstdlib>
 import binio;
 import idt;
 import irq.kbd;
@@ -7,6 +8,7 @@ import pmm;
 import serial;
 import terminal;
 import vga;
+import utils.memory;
 #include <cstddef>
 #include <stdint.h>
 
@@ -65,6 +67,9 @@ extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
   heap::init(heap_size);
 
   serial::printf("fully booted the os\n");
+
+  int *test = (int *)heap::alloc(sizeof(int) * 4);
+  utils::memory::memset(test, 1, sizeof(int) * 4);
 
   while (true) {
     __asm__ __volatile__("hlt");

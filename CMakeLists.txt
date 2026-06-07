@@ -58,22 +58,22 @@ target_link_options(kernel.elf PRIVATE
   -nostdlib -no-pie
 )
 
+set(ISO_DIR ${CMAKE_BINARY_DIR}/iso)
+
 add_custom_target(iso ALL
-  COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_SOURCE_DIR}/iso
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/iso/boot/grub
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:kernel.elf> ${CMAKE_SOURCE_DIR}/iso/boot/kernel.elf
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/grub.cfg ${CMAKE_SOURCE_DIR}/iso/boot/grub/grub.cfg
-  COMMAND grub-mkrescue -o ${CMAKE_SOURCE_DIR}/os.iso ${CMAKE_SOURCE_DIR}/iso
+  COMMAND ${CMAKE_COMMAND} -E rm -rf ${ISO_DIR}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${ISO_DIR}/boot/grub
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:kernel.elf> ${ISO_DIR}/boot/kernel.elf
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/grub.cfg ${ISO_DIR}/boot/grub/grub.cfg
+  COMMAND grub-mkrescue -o ${CMAKE_BINARY_DIR}/os.iso ${ISO_DIR}
   DEPENDS kernel.elf
 )
 
 add_custom_target(run
-  COMMAND qemu-system-x86_64 -cdrom ${CMAKE_SOURCE_DIR}/os.iso -serial stdio
+  COMMAND qemu-system-x86_64 -cdrom ${CMAKE_BINARY_DIR}/os.iso -serial stdio
   DEPENDS iso
 )
 
 add_custom_target(clean-all
   COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}
-  COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_SOURCE_DIR}/iso
-  COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_SOURCE_DIR}/os.iso
 )
