@@ -1,36 +1,35 @@
-#include "string.h"
-#include <cstdarg>
-#include <stdarg.h>
+module;
 
-namespace utils {
+#include <stdarg.h>
+#include <cstdarg>
+
+export module utils.string;
+
+export namespace utils {
 namespace string {
+
 int strcmp(const char *s1, const char *s2) {
   while (*s1 && (*s1 == *s2)) {
     s1++;
     s2++;
   }
-
   return (unsigned char)*s1 - (unsigned char)*s2;
 }
 
 int vsprintf(char *s, const char *format, va_list args) {
   char *out = s;
-
   for (const char *f = format; *f; f++) {
     if (*f != '%') {
       *out++ = *f;
       continue;
     }
-
-    f++; // skip '%'
-
+    f++;
     if (*f == 'd' || *f == 'u') {
       unsigned int val;
-      if (*f == 'd') {
+      if (*f == 'd')
         val = (unsigned int)va_arg(args, int);
-      } else {
+      else
         val = va_arg(args, unsigned int);
-      }
       char buf[32];
       int i = 0;
       if (val == 0) {
@@ -41,11 +40,8 @@ int vsprintf(char *s, const char *format, va_list args) {
           val /= 10;
         }
       }
-      // reverse
-      for (int j = i - 1; j >= 0; j--) {
+      for (int j = i - 1; j >= 0; j--)
         *out++ = buf[j];
-      }
-
     } else if (*f == 'x') {
       unsigned int val = va_arg(args, unsigned int);
       char buf[32];
@@ -59,11 +55,9 @@ int vsprintf(char *s, const char *format, va_list args) {
           val >>= 4;
         }
       }
-      for (int j = i - 1; j >= 0; j--) {
+      for (int j = i - 1; j >= 0; j--)
         *out++ = buf[j];
-      }
-
-    } else if (*f == 'l' && *(f+1) == 'x') {
+    } else if (*f == 'l' && *(f + 1) == 'x') {
       f++;
       unsigned long val = va_arg(args, unsigned long);
       char buf[32];
@@ -77,29 +71,22 @@ int vsprintf(char *s, const char *format, va_list args) {
           val >>= 4;
         }
       }
-      for (int j = i - 1; j >= 0; j--) {
+      for (int j = i - 1; j >= 0; j--)
         *out++ = buf[j];
-      }
-
     } else if (*f == 's') {
       char *str = va_arg(args, char *);
-      while (*str) {
+      while (*str)
         *out++ = *str++;
-      }
-
     } else if (*f == 'c') {
       char c = (char)va_arg(args, int);
       *out++ = c;
-
     } else {
-      // unknown specifier, just print it
       *out++ = '%';
       *out++ = *f;
     }
   }
-
   *out = '\0';
-  return out - s; // number of chars written
+  return out - s;
 }
 
 int sprintf(char *s, const char *format, ...) {
@@ -110,5 +97,5 @@ int sprintf(char *s, const char *format, ...) {
   return ret;
 }
 
-} // namespace string
-} // namespace utils
+}
+}

@@ -9,6 +9,15 @@ align 8
     dd -(0xe85250d6 + 0 + (header_end - header_start))
 
 header_start:
+    align 8
+    dw 5
+    dw 0
+    dd 20
+    dd 1024
+    dd 768
+    dd 32
+
+    align 8
     dw 0
     dw 0
     dd 8
@@ -24,6 +33,7 @@ align 4096
 pml4: resb 4096
 pdpt: resb 4096
 pd:   resb 4096
+pd_fb: resb 4096
 
 stack: resb 16384
 stack_top:
@@ -53,7 +63,7 @@ _start:
     ; zero paging structures (32-bit safe)
     ; --------------------------------
     mov edi, pml4
-    mov ecx, (4096 * 3) / 4
+    mov ecx, (4096 * 4) / 4
     xor eax, eax
     rep stosd
 
@@ -82,6 +92,26 @@ _start:
     mov [pd + ebx*8], eax
     inc ebx
     loop .map_pd
+
+    ; --------------------------------
+    ; map framebuffer at ~3.9GB
+    ; --------------------------------
+    ; PDPT[3] -> pd_fb
+    mov eax, pd_fb
+    or eax, 0b11
+    mov [pdpt + 3*8], eax
+
+    ; pd_fb[488] -> 0xFD000000 (2MB page, r/w)
+    mov eax, 0xFD000000
+    or eax, 0b10000011
+    mov [pd_fb + 488*8], eax
+    mov dword [pd_fb + 488*8 + 4], 0
+
+    ; pd_fb[489] -> 0xFD200000 (next 2MB of framebuffer)
+    mov eax, 0xFD200000
+    or eax, 0b10000011
+    mov [pd_fb + 489*8], eax
+    mov dword [pd_fb + 489*8 + 4], 0
 
     ; --------------------------------
     ; enable PAE

@@ -1,17 +1,22 @@
-#include "drivers/binio.h"
-#include "drivers/idt.h"
-#include "drivers/irq/kbd.h"
-#include "drivers/irq/pit.h"
-#include "drivers/mem/heap.h"
-#include "drivers/mem/pmm.h"
-#include "drivers/serial.h"
-#include "drivers/terminal/terminal.h"
-#include "drivers/vga.h"
+#include <cstdlib>
+import binio;
+import idt;
+import irq.kbd;
+import irq.pit;
+import heap;
+import pmm;
+import serial;
+import terminal;
+import vga;
+import utils.memory;
+#include <cstddef>
 #include <stdint.h>
 
 extern "C" void test_iretq_asm(void);
 
 extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
+  serial::init();
+  vga::init(mb_info);
   vga::printf("clearing vga screen\n");
   serial::printf("clearing vga screen\n");
   vga::clear_scr();
@@ -54,13 +59,17 @@ extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
   serial::printf("init pmm\n");
   pmm::init(mb_info);
 
-  vga::printf("welcome to xenos\n");
   serial::printf("initializing terminal\n");
   terminal::init();
 
   serial::printf("init heap\n");
   size_t heap_size = pmm::free_frames() * 4096;
   heap::init(heap_size);
+
+  serial::printf("fully booted the os\n");
+
+  int *test = (int *)heap::alloc(sizeof(int) * 4);
+  utils::memory::memset(test, 1, sizeof(int) * 4);
 
   while (true) {
     __asm__ __volatile__("hlt");

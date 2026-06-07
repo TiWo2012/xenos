@@ -1,6 +1,6 @@
-#include "memory.h"
+export module utils.memory;
 
-namespace utils {
+export namespace utils {
 namespace memory {
 
 void *memset(void *p, int v, int n) {
