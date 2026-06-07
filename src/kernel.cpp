@@ -75,6 +75,12 @@ extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
   int *test = (int *)heap::alloc(sizeof(int) * 4);
   utils::memory::memset(test, 1, sizeof(int) * 4);
 
+  void* phys = vmm::get_physical((void*)0xFFFFFFFF8010A000);
+  serial::printf("vmm: get_physical(0xFFFFFFFF8010A000) = 0x%lx\n", (uint64_t)phys);
+
+  phys = vmm::get_physical((void*)test);
+  serial::printf("vmm: get_physical(heap test) = 0x%lx\n", (uint64_t)phys);
+
   while (true) {
     __asm__ __volatile__("hlt");
   }

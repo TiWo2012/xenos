@@ -89,7 +89,14 @@ void* map_page(void* phys, void* virt, uint64_t flags) {
     utils::memory::memset(p, 0, 4096);
     p2->entries[i2] = (uint64_t)p | PAGE_PRESENT | PAGE_WRITE | (flags & PAGE_USER);
   } else if (e & PAGE_HUGE) {
-    return nullptr;
+    page_table* pt = (page_table*)pmm::alloc_page();
+    if (!pt) return nullptr;
+    uint64_t base = (e & ~0x1FFFFF);
+    uint64_t pt_flags = (e & ~(PAGE_HUGE | 0x1FFFFF)) | PAGE_PRESENT;
+    for (int i = 0; i < 512; i++) {
+      pt->entries[i] = (base + (uint64_t)i * 4096) | pt_flags;
+    }
+    p2->entries[i2] = (uint64_t)pt | PAGE_PRESENT | PAGE_WRITE | (flags & PAGE_USER);
   }
   page_table* p1 = (page_table*)(p2->entries[i2] & ~0xFFF);
 

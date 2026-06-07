@@ -1,6 +1,7 @@
 BITS 32
 
-section .multiboot
+; multiboot header must be in first 8KB — placed at start of .boot section
+section .boot alloc exec write
 align 8
 
     dd 0xe85250d6
@@ -24,10 +25,10 @@ header_start:
 header_end:
 
 ; =========================
-; 32-bit data
+; Boot data (low mem, identity mapped)
 ; =========================
 
-section .bss
+section .boot.bss nobits alloc write
 align 4096
 
 pml4: resb 4096
@@ -42,10 +43,10 @@ mb_magic: resd 1
 mb_info:  resd 1
 
 ; =========================
-; 32-bit entry
+; Boot code (low mem, identity mapped)
 ; =========================
 
-section .text
+section .boot alloc exec write
 global _start
 extern boot_main
 
@@ -68,20 +69,31 @@ _start:
     rep stosd
 
     ; --------------------------------
-    ; paging setup (identity map 1GB)
+    ; paging setup
+    ;   PML4[0]   → identity map 1GB (lower half, for boot transition)
+    ;   PML4[511] → same PDPT     (higher half, kernel lives here)
     ; --------------------------------
 
-    ; PML4 -> PDPT
+    ; PML4[0] -> PDPT
     mov eax, pdpt
     or eax, 0b11
     mov [pml4], eax
 
-    ; PDPT -> PD
+    ; PML4[511] -> same PDPT (higher-half alias)
+    mov eax, pdpt
+    or eax, 0b11
+    mov [pml4 + 511*8], eax
+
+    ; PDPT[0] -> PD (identity map, PML4[0])
     mov eax, pd
     or eax, 0b11
     mov [pdpt], eax
 
-    ; fill PD with 2MB pages
+    ; PDPT[510] -> same PD (higher half, PML4[511])
+    ; 0xFFFFFFFF80100000+ → PML4[511], PDPT[510], PD[0..n]
+    mov [pdpt + 510*8], eax
+
+    ; fill PD with 2MB pages (covers 0 – 1GB)
     mov ecx, 512
     xor ebx, ebx
 
@@ -137,15 +149,15 @@ _start:
     or eax, (1 << 31)
     mov cr0, eax
 
-    ; load GDT
+    ; load GDT (descriptor still at low VMA)
     lgdt [gdt_descriptor]
 
-    ; jump to 64-bit mode
+    ; jump to 64-bit mode (target at low VMA, identity mapped)
     jmp 0x08:long_mode_entry
 
 
 ; =========================
-; 64-bit mode
+; 64-bit mode entry (low VMA, identity mapped)
 ; =========================
 
 BITS 64
@@ -161,7 +173,9 @@ long_mode_entry:
     mov edi, [mb_magic]
     mov esi, [mb_info]
 
-    call boot_main
+    ; jump to higher half kernel via 64-bit register
+    mov rax, boot_main
+    call rax
 
 .hang:
     hlt
@@ -169,10 +183,8 @@ long_mode_entry:
 
 
 ; =========================
-; GDT
+; GDT (low VMA, referenced from 32-bit code before far jump)
 ; =========================
-
-section .rodata
 
 gdt_start:
     dq 0x0000000000000000     ; 0x00 - null

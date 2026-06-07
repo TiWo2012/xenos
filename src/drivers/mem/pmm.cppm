@@ -10,6 +10,8 @@ import serial;
 extern "C" uintptr_t KERNEL_START;
 extern "C" uintptr_t KERNEL_END;
 
+static constexpr uint64_t KERNEL_OFFSET = 0xFFFFFFFF80000000ULL;
+
 export namespace pmm {
 
 void init(uint32_t mb_info);
@@ -79,8 +81,8 @@ struct mmap_entry {
 };
 
 void init(uint32_t mb_info_addr) {
-  serial::printf("pmm: init, bitmap at 0x%lx, size %u\n",
-                 (uint64_t)bitmap, BITMAP_SIZE);
+  serial::printf("pmm: init, bitmap at 0x%lx (phys 0x%lx), size %u\n",
+                 (uint64_t)bitmap, (uint64_t)bitmap - KERNEL_OFFSET, BITMAP_SIZE);
 
   for (size_t i = 0; i < BITMAP_SIZE; i++) {
     bitmap[i] = 0xFF;
@@ -89,10 +91,11 @@ void init(uint32_t mb_info_addr) {
 
   uint8_t* mb = (uint8_t*)(uint64_t)mb_info_addr;
   uint32_t total_size = *(uint32_t*)mb;
-  uintptr_t kernel_start = (uintptr_t)&KERNEL_START;
-  uintptr_t kernel_end = (uintptr_t)&KERNEL_END;
+  uintptr_t kernel_start = (uintptr_t)&KERNEL_START - KERNEL_OFFSET;
+  uintptr_t kernel_end = (uintptr_t)&KERNEL_END - KERNEL_OFFSET;
 
-  serial::printf("pmm: kernel 0x%lx - 0x%lx, mb_info at 0x%lx, total_size %u\n",
+  serial::printf("pmm: kernel 0x%lx - 0x%lx (phys 0x%lx - 0x%lx), mb_info at 0x%lx, total_size %u\n",
+                 (uintptr_t)&KERNEL_START, (uintptr_t)&KERNEL_END,
                  kernel_start, kernel_end, (uint64_t)mb, total_size);
 
   uint32_t offset = 8;
@@ -133,8 +136,9 @@ void init(uint32_t mb_info_addr) {
   }
 
   mark_used(0, 0x1000);
+  mark_used(0x100000, kernel_start);  // .boot section (page tables, stack, code at 1M+)
   mark_used(kernel_start, kernel_end);
-  mark_used((uint64_t)bitmap, (uint64_t)bitmap + BITMAP_SIZE);
+  mark_used((uint64_t)bitmap - KERNEL_OFFSET, (uint64_t)bitmap - KERNEL_OFFSET + BITMAP_SIZE);
   mark_used((uint64_t)mb, (uint64_t)mb + total_size);
 
   serial::printf("pmm: done, free frames: %u\n", MAX_FRAMES - used_frames);
