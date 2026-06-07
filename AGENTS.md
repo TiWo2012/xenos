@@ -26,11 +26,12 @@ All project headers eliminated. Kernel builds and boots in QEMU.
 | `heap` | `src/drivers/mem/heap.cppm` | `heap::init`, `alloc`, `free`, `calloc`, `realloc` |
 | `terminal` | `src/drivers/terminal/terminal.cppm` | `terminal::init`, `send_key`, `process_command` |
 | `irq.kbd` | `src/drivers/irq/kbd.cppm` | `irq::kbd::kbd_init`, `keyboard_handler` |
+| `vmm` | `src/drivers/mem/vmm.cppm` | `vmm::init`, `map_page`, `unmap_page`, `get_physical`, `handle_page_fault` |
 
 ### Remaining .cpp files (no project includes)
 - `src/boot.cpp` — boot stub, only `<stdint.h>`
 - `src/kernel.cpp` — main, uses `import` for all modules, `<cstddef>` and `<stdint.h>`
-- `src/drivers/isr.cpp` — ASM ISR handler, uses `import idt` and `import serial`, `<stdint.h>`
+- `src/drivers/isr.cpp` — ASM ISR handler, uses `import idt`, `import serial`, and `import vmm`, `<stdint.h>`
 
 ### Key patterns used
 - `export namespace foo { ... }` for declarations, then `namespace foo { ... }` for definitions (with `static` helper functions inside the non-exported namespace block to avoid "cannot export internal linkage" error).

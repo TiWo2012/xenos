@@ -16,6 +16,7 @@ A hobby x86-64 operating system kernel written from scratch in C++23 (using C++2
 - **Serial (COM1)** — 38400 baud 8N1, loopback-tested, `printf` support
 - **VGA text mode** — 80×25, hardware cursor, `printf` support
 - **Physical Memory Manager (PMM)** — bitmap allocator, parses GRUB memory map, tracks used/free frames
+- **Virtual Memory Manager (VMM)** — 4-level page table manipulation, `map_page`, `unmap_page`, `get_physical`, page fault handler with full error dump
 - **Kernel heap** — linked-list dynamic allocator with splitting, coalescing, `calloc`/`realloc`
 - **Terminal shell** — interactive command line over VGA with keyboard input; commands: `clear`, `exit` (ACPI shutdown), `mem` (PMM stats)
 - **ACPI shutdown** — power-off via PM1a_CNT port (`0x604`)
@@ -67,6 +68,7 @@ The kernel boots in QEMU with the serial port connected to stdio, so all serial 
 │   │   │   └── asm_shutdown.asm# ACPI power-off
 │   │   └── mem/
 │   │       ├── pmm.cppm        # Module `pmm`: physical memory manager (bitmap, 4 GB max)
+│   │       ├── vmm.cppm        # Module `vmm`: virtual memory manager (4-level paging, page fault)
 │   │       └── heap.cppm       # Module `heap`: kernel heap (linked-list, split, coalesce)
 │   └── utils/
 │       ├── memory.cppm         # Module `utils.memory`: memset (freestanding)
@@ -93,9 +95,10 @@ In `kernel_main`:
 6. Unmask IRQ0 and IRQ1; enable interrupts (`sti`)
 7. Run iretq self-test
 8. Initialize PMM from multiboot memory map
-9. Print welcome banner, initialize terminal shell
-10. Initialize heap using all free physical memory
-11. Enter infinite `hlt` loop
+9. Initialize VMM
+10. Print welcome banner, initialize terminal shell
+11. Initialize heap using all free physical memory
+12. Enter infinite `hlt` loop
 
 ### Memory Map
 
@@ -120,6 +123,15 @@ In `kernel_main`:
 - All memory starts as "used"; the multiboot memory map (tag type 6) marks available RAM entries as "free"
 - Reserved: first physical page, kernel image, PMM bitmap, multiboot structures
 - `alloc_page` does a linear scan with a `last_alloc` hint; `alloc_pages` finds contiguous runs
+
+### Virtual Memory Manager
+
+- 4-level page table walks with automatic page table allocation from PMM
+- `map_page` — map a single 4K page; creates intermediate tables as needed
+- `unmap_page` — remove a 4K mapping and flush TLB (`invlpg`)
+- `get_physical` — walk page tables to translate virtual→physical (handles 2M huge pages)
+- `map_contiguous` — map `n` consecutive 4K pages in one call
+- `handle_page_fault` — dump CR2 + error code flags (`P/W/U/R/I/PK`) and halt
 
 ### Heap Allocator
 
@@ -183,6 +195,15 @@ import pmm;
 pmm::init(mb_info);
 pmm::alloc_page, pmm::free_page, pmm::alloc_pages;
 pmm::total_frames, pmm::free_frames;
+```
+
+### `vmm`
+```cpp
+import vmm;
+vmm::init();
+vmm::map_page(phys_ptr, virt_ptr, PAGE_PRESENT | PAGE_WRITE);
+vmm::unmap_page(virt_ptr);
+void* phys = vmm::get_physical(virt_ptr);
 ```
 
 ### `heap`

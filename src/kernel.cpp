@@ -8,6 +8,7 @@ import pmm;
 import serial;
 import terminal;
 import vga;
+import vmm;
 import utils.memory;
 #include <cstddef>
 #include <stdint.h>
@@ -58,6 +59,9 @@ extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
 
   serial::printf("init pmm\n");
   pmm::init(mb_info);
+
+  serial::printf("initializing vmm\n");
+  vmm::init();
 
   serial::printf("initializing terminal\n");
   terminal::init();
