@@ -20,7 +20,7 @@ All project headers eliminated. Kernel builds and boots in QEMU.
 | `serial` | `src/drivers/serial.cppm` | `serial::write_char`, `write_string`, `print_hex`, `write_dec`, `printf` |
 | `font` | `src/drivers/font.cppm` | `font::vga8x16` (font bitmap) |
 | `vga` | `src/drivers/vga.cppm` | `vga::color`, `framebuffer_info`, `fb_info`, `fb`, `init`, `put_pixel`, `put_char`, `write_char`, `write_string`, `printf`, `backspace`, `clear_scr`, `set_cursor_visible` |
-| `pmm` | `src/drivers/mem/pmm.cppm` | `pmm::init`, `alloc_page`, `free_page`, `alloc_pages`, `total_frames`, `free_frames` |
+| `pmm` | `src/drivers/mem/pmm.cppm` | `pmm::init`, `alloc_page`, `free_page`, `alloc_pages`, `total_frames`, `free_frames`, `PHYS_MAP_BASE`, `phys_to_virt`, `virt_to_phys` |
 | `idt` | `src/drivers/idt.cppm` | `idt::init`, `pic_remap`, `pic_eoi`, `pic_unmask_irq`, `pic_mask_irq`, `irq_register_handler`, `irq_dispatch` |
 | `irq.pit` | `src/drivers/irq/pit.cppm` | `irq::pit::pit_init`, `timer_handler` |
 | `heap` | `src/drivers/mem/heap.cppm` | `heap::init`, `alloc`, `free`, `calloc`, `realloc` |
@@ -38,6 +38,11 @@ All project headers eliminated. Kernel builds and boots in QEMU.
 - Module name `irq.pit` → directory `src/drivers/irq/pit.cppm`.
 - Exported variables (`fb_info`, `fb`) declared `extern` in `export namespace`, defined in non-exported `namespace`.
 - `size_t` and other standard types need explicit `#include <cstddef>` in consumers since modules don't transitively provide them.
+- All physical memory is mapped at `PHYS_MAP_BASE` (`0xFFFF800000000000`, PML4[256]) via 2MB huge pages covering 0–4GB.
+- Page table pointers from CR3 or PTEs are converted via `pmm::phys_to_virt()` before dereferencing.
+- Identity map (PML4[0]) is dropped after init in `kernel.cpp`; GDT must be reloaded via physmap before clearing.
+- Stack lives in physmap (set in `entry.asm` 64-bit code via `PHYS_MAP_BASE + stack_top`).
+- Kernel at PML4[511] PDPT[510] (VMA `0xFFFFFFFF80000000+`), no identity-map dependency at runtime.
 
 ### Build
 - CMake 3.28+, Ninja, Clang 22.

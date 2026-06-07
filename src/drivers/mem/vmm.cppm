@@ -42,7 +42,7 @@ struct page_table {
 static page_table* get_pml4() {
   uint64_t cr3;
   __asm__ __volatile__("mov %%cr3, %0" : "=r"(cr3));
-  return (page_table*)cr3;
+  return (page_table*)pmm::phys_to_virt(cr3);
 }
 
 static void invlpg(void* v) {
@@ -66,39 +66,39 @@ void* map_page(void* phys, void* virt, uint64_t flags) {
 
   uint64_t e = pml4->entries[i4];
   if (!(e & PAGE_PRESENT)) {
-    page_table* p = (page_table*)pmm::alloc_page();
+    page_table* p = (page_table*)pmm::phys_to_virt((uint64_t)pmm::alloc_page());
     if (!p) return nullptr;
     utils::memory::memset(p, 0, 4096);
-    pml4->entries[i4] = (uint64_t)p | PAGE_PRESENT | PAGE_WRITE | (flags & PAGE_USER);
+    pml4->entries[i4] = pmm::virt_to_phys(p) | PAGE_PRESENT | PAGE_WRITE | (flags & PAGE_USER);
   }
-  page_table* p3 = (page_table*)(pml4->entries[i4] & ~0xFFF);
+  page_table* p3 = (page_table*)pmm::phys_to_virt(pml4->entries[i4] & ~0xFFF);
 
   e = p3->entries[i3];
   if (!(e & PAGE_PRESENT)) {
-    page_table* p = (page_table*)pmm::alloc_page();
+    page_table* p = (page_table*)pmm::phys_to_virt((uint64_t)pmm::alloc_page());
     if (!p) return nullptr;
     utils::memory::memset(p, 0, 4096);
-    p3->entries[i3] = (uint64_t)p | PAGE_PRESENT | PAGE_WRITE | (flags & PAGE_USER);
+    p3->entries[i3] = pmm::virt_to_phys(p) | PAGE_PRESENT | PAGE_WRITE | (flags & PAGE_USER);
   }
-  page_table* p2 = (page_table*)(p3->entries[i3] & ~0xFFF);
+  page_table* p2 = (page_table*)pmm::phys_to_virt(p3->entries[i3] & ~0xFFF);
 
   e = p2->entries[i2];
   if (!(e & PAGE_PRESENT)) {
-    page_table* p = (page_table*)pmm::alloc_page();
+    page_table* p = (page_table*)pmm::phys_to_virt((uint64_t)pmm::alloc_page());
     if (!p) return nullptr;
     utils::memory::memset(p, 0, 4096);
-    p2->entries[i2] = (uint64_t)p | PAGE_PRESENT | PAGE_WRITE | (flags & PAGE_USER);
+    p2->entries[i2] = pmm::virt_to_phys(p) | PAGE_PRESENT | PAGE_WRITE | (flags & PAGE_USER);
   } else if (e & PAGE_HUGE) {
-    page_table* pt = (page_table*)pmm::alloc_page();
+    page_table* pt = (page_table*)pmm::phys_to_virt((uint64_t)pmm::alloc_page());
     if (!pt) return nullptr;
     uint64_t base = (e & ~0x1FFFFF);
     uint64_t pt_flags = (e & ~(PAGE_HUGE | 0x1FFFFF)) | PAGE_PRESENT;
     for (int i = 0; i < 512; i++) {
       pt->entries[i] = (base + (uint64_t)i * 4096) | pt_flags;
     }
-    p2->entries[i2] = (uint64_t)pt | PAGE_PRESENT | PAGE_WRITE | (flags & PAGE_USER);
+    p2->entries[i2] = pmm::virt_to_phys(pt) | PAGE_PRESENT | PAGE_WRITE | (flags & PAGE_USER);
   }
-  page_table* p1 = (page_table*)(p2->entries[i2] & ~0xFFF);
+  page_table* p1 = (page_table*)pmm::phys_to_virt(p2->entries[i2] & ~0xFFF);
 
   p1->entries[i1] = paddr | flags | PAGE_PRESENT;
   invlpg(virt);
@@ -127,15 +127,15 @@ void unmap_page(void* virt) {
 
   uint64_t e = pml4->entries[pml4_index(vaddr)];
   if (!(e & PAGE_PRESENT)) return;
-  page_table* p3 = (page_table*)(e & ~0xFFF);
+  page_table* p3 = (page_table*)pmm::phys_to_virt(e & ~0xFFF);
 
   e = p3->entries[pdpt_index(vaddr)];
   if (!(e & PAGE_PRESENT)) return;
-  page_table* p2 = (page_table*)(e & ~0xFFF);
+  page_table* p2 = (page_table*)pmm::phys_to_virt(e & ~0xFFF);
 
   e = p2->entries[pd_index(vaddr)];
   if (!(e & PAGE_PRESENT) || (e & PAGE_HUGE)) return;
-  page_table* p1 = (page_table*)(e & ~0xFFF);
+  page_table* p1 = (page_table*)pmm::phys_to_virt(e & ~0xFFF);
 
   p1->entries[pt_index(vaddr)] = 0;
   invlpg(virt);
@@ -147,11 +147,11 @@ void* get_physical(void* virt) {
 
   uint64_t e = pml4->entries[pml4_index(vaddr)];
   if (!(e & PAGE_PRESENT)) return nullptr;
-  page_table* p3 = (page_table*)(e & ~0xFFF);
+  page_table* p3 = (page_table*)pmm::phys_to_virt(e & ~0xFFF);
 
   e = p3->entries[pdpt_index(vaddr)];
   if (!(e & PAGE_PRESENT)) return nullptr;
-  page_table* p2 = (page_table*)(e & ~0xFFF);
+  page_table* p2 = (page_table*)pmm::phys_to_virt(e & ~0xFFF);
 
   e = p2->entries[pd_index(vaddr)];
   if (!(e & PAGE_PRESENT)) return nullptr;
@@ -159,7 +159,7 @@ void* get_physical(void* virt) {
   if (e & PAGE_HUGE) {
     return (void*)((e & ~0x1FFFFF) | (vaddr & 0x1FFFFF));
   }
-  page_table* p1 = (page_table*)(e & ~0xFFF);
+  page_table* p1 = (page_table*)pmm::phys_to_virt(e & ~0xFFF);
 
   e = p1->entries[pt_index(vaddr)];
   if (!(e & PAGE_PRESENT)) return nullptr;

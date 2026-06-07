@@ -74,10 +74,11 @@ void init(size_t size) {
     if (!page) {
       break;
     }
+    void *vpage = pmm::phys_to_virt((uint64_t)page);
     for (size_t i = 0; i < 4096; i += 4) {
-      *(volatile uint32_t *)((uintptr_t)page + i) = 0;
+      *(volatile uint32_t *)((uintptr_t)vpage + i) = 0;
     }
-    block *b = (block *)page;
+    block *b = (block *)vpage;
     b->size = 4096;
     b->free = true;
     insert_sorted(b);

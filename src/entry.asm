@@ -31,16 +31,15 @@ header_end:
 section .boot.bss nobits alloc write
 align 4096
 
-pml4: resb 4096
-pdpt: resb 4096
-pd:   resb 4096
-pd_fb: resb 4096
-
-stack: resb 16384
+pml4:       resb 4096
+pdpt:       resb 4096
+pd:         resb 4096
+pdpt_phys:  resb 4096
+pd_phys:    resb 16384
+stack:      resb 16384
 stack_top:
-
-mb_magic: resd 1
-mb_info:  resd 1
+mb_magic:   resd 1
+mb_info:    resd 1
 
 ; =========================
 ; Boot code (low mem, identity mapped)
@@ -64,66 +63,71 @@ _start:
     ; zero paging structures (32-bit safe)
     ; --------------------------------
     mov edi, pml4
-    mov ecx, (4096 * 4) / 4
+    mov ecx, (4096 * 8) / 4
     xor eax, eax
     rep stosd
 
-    ; --------------------------------
-    ; paging setup
-    ;   PML4[0]   → identity map 1GB (lower half, for boot transition)
-    ;   PML4[511] → same PDPT     (higher half, kernel lives here)
-    ; --------------------------------
-
-    ; PML4[0] -> PDPT
+    ; PML4[0] -> PDPT (identity map, will be cleared after boot)
     mov eax, pdpt
     or eax, 0b11
     mov [pml4], eax
 
-    ; PML4[511] -> same PDPT (higher-half alias)
+    ; PML4[256] -> PDPT_phys (physmap: physical 0-4GB at 0xFFFF800000000000+)
+    mov eax, pdpt_phys
+    or eax, 0b11
+    mov [pml4 + 256*8], eax
+
+    ; PML4[511] -> same PDPT (higher-half kernel alias)
     mov eax, pdpt
     or eax, 0b11
     mov [pml4 + 511*8], eax
 
-    ; PDPT[0] -> PD (identity map, PML4[0])
+    ; PDPT[0] -> PD (identity map / PML4[0])
     mov eax, pd
     or eax, 0b11
     mov [pdpt], eax
 
-    ; PDPT[510] -> same PD (higher half, PML4[511])
-    ; 0xFFFFFFFF80100000+ → PML4[511], PDPT[510], PD[0..n]
+    ; PDPT[510] -> same PD (higher half / PML4[511])
     mov [pdpt + 510*8], eax
 
-    ; fill PD with 2MB pages (covers 0 – 1GB)
+    ; fill PD with 2MB pages (covers 0-1GB)
     mov ecx, 512
     xor ebx, ebx
-
 .map_pd:
     mov eax, ebx
-    shl eax, 21            ; 2MB chunks
+    shl eax, 21
     or eax, 0b10000011
     mov [pd + ebx*8], eax
     inc ebx
     loop .map_pd
 
-    ; --------------------------------
-    ; map framebuffer at ~3.9GB
-    ; --------------------------------
-    ; PDPT[3] -> pd_fb
-    mov eax, pd_fb
+    ; PDPT_phys[0..3] -> PD_phys + N*4096 (physmap, 4GB range)
+    mov eax, pd_phys
     or eax, 0b11
-    mov [pdpt + 3*8], eax
+    mov [pdpt_phys], eax
 
-    ; pd_fb[488] -> 0xFD000000 (2MB page, r/w)
-    mov eax, 0xFD000000
-    or eax, 0b10000011
-    mov [pd_fb + 488*8], eax
-    mov dword [pd_fb + 488*8 + 4], 0
+    mov eax, pd_phys + 4096
+    or eax, 0b11
+    mov [pdpt_phys + 1*8], eax
 
-    ; pd_fb[489] -> 0xFD200000 (next 2MB of framebuffer)
-    mov eax, 0xFD200000
+    mov eax, pd_phys + 8192
+    or eax, 0b11
+    mov [pdpt_phys + 2*8], eax
+
+    mov eax, pd_phys + 12288
+    or eax, 0b11
+    mov [pdpt_phys + 3*8], eax
+
+    ; fill all 4 physmap PDs (2048 entries) with 2MB pages covering 0-4GB
+    mov ecx, 2048
+    xor ebx, ebx
+.map_pd_phys:
+    mov eax, ebx
+    shl eax, 21
     or eax, 0b10000011
-    mov [pd_fb + 489*8], eax
-    mov dword [pd_fb + 489*8 + 4], 0
+    mov [pd_phys + ebx*8], eax
+    inc ebx
+    loop .map_pd_phys
 
     ; --------------------------------
     ; enable PAE
@@ -162,18 +166,25 @@ _start:
 
 BITS 64
 
+PHYS_MAP_BASE equ 0xFFFF800000000000
+
 long_mode_entry:
     mov ax, 0x10
     mov ss, ax
     mov ds, ax
     mov es, ax
-    mov rsp, stack_top
 
-    ; restore args (safe in 64-bit now)
-    mov edi, [mb_magic]
-    mov esi, [mb_info]
+    ; switch stack to physmap (identity map will be cleared later)
+    mov rax, PHYS_MAP_BASE + stack_top
+    mov rsp, rax
 
-    ; jump to higher half kernel via 64-bit register
+    ; restore args via physmap
+    mov rax, PHYS_MAP_BASE + mb_magic
+    mov edi, [rax]
+    mov rax, PHYS_MAP_BASE + mb_info
+    mov esi, [rax]
+
+    ; jump to higher half kernel
     mov rax, boot_main
     call rax
 

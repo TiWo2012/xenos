@@ -72,14 +72,19 @@ extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
 
   serial::printf("fully booted the os\n");
 
-  int *test = (int *)heap::alloc(sizeof(int) * 4);
-  utils::memory::memset(test, 1, sizeof(int) * 4);
+  serial::printf("dropping identity map\n");
 
-  void* phys = vmm::get_physical((void*)0xFFFFFFFF8010A000);
-  serial::printf("vmm: get_physical(0xFFFFFFFF8010A000) = 0x%lx\n", (uint64_t)phys);
+  struct { uint16_t limit; uint64_t base; } __attribute__((packed)) gdtr;
+  __asm__ __volatile__("sgdt %0" : "=m"(gdtr));
+  gdtr.base = (uint64_t)pmm::phys_to_virt(gdtr.base);
+  __asm__ __volatile__("lgdt %0" : : "m"(gdtr));
 
-  phys = vmm::get_physical((void*)test);
-  serial::printf("vmm: get_physical(heap test) = 0x%lx\n", (uint64_t)phys);
+  uint64_t cr3;
+  __asm__ __volatile__("mov %%cr3, %0" : "=r"(cr3));
+  uint64_t* pml4 = (uint64_t*)pmm::phys_to_virt(cr3);
+  pml4[0] = 0;
+  __asm__ __volatile__("invlpg (%0)" : : "r"(0ULL) : "memory");
+  serial::printf("identity map dropped, running purely on physmap + higher half\n");
 
   while (true) {
     __asm__ __volatile__("hlt");

@@ -7,6 +7,7 @@ module;
 export module vga;
 
 import font;
+import pmm;
 import utils.string;
 import binio;
 import serial;
@@ -55,7 +56,7 @@ void set_cursor_visible();
 
 namespace vga {
 
-volatile char *vga_mem = (volatile char *)0xB8000;
+volatile char *vga_mem = (volatile char *)pmm::phys_to_virt(0xB8000);
 
 struct vga_index {
   int x, y;
@@ -119,7 +120,7 @@ static void fb_scroll() {
 namespace vga {
 
 void init(uint32_t mb_info_addr) {
-  uint8_t *mb = (uint8_t *)(uint64_t)mb_info_addr;
+  uint8_t *mb = (uint8_t *)pmm::phys_to_virt(mb_info_addr);
   uint32_t total_size = *(uint32_t *)mb;
 
   uint32_t offset = 8;
@@ -137,7 +138,7 @@ void init(uint32_t mb_info_addr) {
       fb_info.width = *(uint32_t *)(mb + offset + 20);
       fb_info.height = *(uint32_t *)(mb + offset + 24);
       fb_info.bpp = *(uint8_t *)(mb + offset + 28);
-      fb = (volatile uint32_t *)fb_info.addr;
+      fb = (volatile uint32_t *)pmm::phys_to_virt(fb_info.addr);
 
       serial::printf("vga: found framebuffer\n");
       serial::printf("vga: addr=0x%lx pitch=%u width=%u height=%u bpp=%u\n",
