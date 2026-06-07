@@ -1,6 +1,7 @@
 // isr.cpp
 import idt;
 import serial;
+import vmm;
 #include <stdint.h>
 
 // match EXACT push order (reverse of pops!)
@@ -13,6 +14,13 @@ struct Registers {
 extern "C" void isr_handler(Registers *regs) {
   if (regs->int_no >= 32) {
     idt::irq_dispatch(regs->int_no);
+    return;
+  }
+
+  if (regs->int_no == 14) {
+    uint64_t cr2;
+    __asm__ __volatile__("mov %%cr2, %0" : "=r"(cr2));
+    vmm::handle_page_fault(cr2, regs->err_code);
     return;
   }
 

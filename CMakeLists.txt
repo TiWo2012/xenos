@@ -40,6 +40,7 @@ target_sources(kernel.elf
       ${CMAKE_SOURCE_DIR}/src/drivers/idt.cppm
       ${CMAKE_SOURCE_DIR}/src/drivers/irq/pit.cppm
       ${CMAKE_SOURCE_DIR}/src/drivers/mem/heap.cppm
+      ${CMAKE_SOURCE_DIR}/src/drivers/mem/vmm.cppm
       ${CMAKE_SOURCE_DIR}/src/drivers/terminal/terminal.cppm
       ${CMAKE_SOURCE_DIR}/src/drivers/irq/kbd.cppm
 )

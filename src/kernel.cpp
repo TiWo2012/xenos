@@ -8,6 +8,7 @@ import pmm;
 import serial;
 import terminal;
 import vga;
+import vmm;
 import utils.memory;
 #include <cstddef>
 #include <stdint.h>
@@ -59,6 +60,9 @@ extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
   serial::printf("init pmm\n");
   pmm::init(mb_info);
 
+  serial::printf("initializing vmm\n");
+  vmm::init();
+
   serial::printf("initializing terminal\n");
   terminal::init();
 
@@ -68,8 +72,19 @@ extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
 
   serial::printf("fully booted the os\n");
 
-  int *test = (int *)heap::alloc(sizeof(int) * 4);
-  utils::memory::memset(test, 1, sizeof(int) * 4);
+  serial::printf("dropping identity map\n");
+
+  struct { uint16_t limit; uint64_t base; } __attribute__((packed)) gdtr;
+  __asm__ __volatile__("sgdt %0" : "=m"(gdtr));
+  gdtr.base = (uint64_t)pmm::phys_to_virt(gdtr.base);
+  __asm__ __volatile__("lgdt %0" : : "m"(gdtr));
+
+  uint64_t cr3;
+  __asm__ __volatile__("mov %%cr3, %0" : "=r"(cr3));
+  uint64_t* pml4 = (uint64_t*)pmm::phys_to_virt(cr3);
+  pml4[0] = 0;
+  __asm__ __volatile__("invlpg (%0)" : : "r"(0ULL) : "memory");
+  serial::printf("identity map dropped, running purely on physmap + higher half\n");
 
   while (true) {
     __asm__ __volatile__("hlt");
