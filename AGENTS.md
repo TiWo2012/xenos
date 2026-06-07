@@ -43,6 +43,8 @@ All project headers eliminated. Kernel builds and boots in QEMU.
 - Identity map (PML4[0]) is dropped after init in `kernel.cpp`; GDT must be reloaded via physmap before clearing.
 - Stack lives in physmap (set in `entry.asm` 64-bit code via `PHYS_MAP_BASE + stack_top`).
 - Kernel at PML4[511] PDPT[510] (VMA `0xFFFFFFFF80000000+`), no identity-map dependency at runtime.
+- PML4[510] is a self-reference entry for recursive page table walking (constant `vmm::PML4_SELF_REF = 510`).
+- Page-table walks in VMM still use physmap; recursive mapping is available for future use.
 
 ### Build
 - CMake 3.28+, Ninja, Clang 22.

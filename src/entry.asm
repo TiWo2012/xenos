@@ -77,6 +77,11 @@ _start:
     or eax, 0b11
     mov [pml4 + 256*8], eax
 
+    ; PML4[510] -> PML4 itself (recursive page table mapping)
+    mov eax, pml4
+    or eax, 0b11
+    mov [pml4 + 510*8], eax
+
     ; PML4[511] -> same PDPT (higher-half kernel alias)
     mov eax, pdpt
     or eax, 0b11

@@ -18,6 +18,8 @@ constexpr uint64_t PAGE_HUGE = 0x80;
 
 constexpr uint16_t PT_ENTRIES = 512;
 
+constexpr uint16_t PML4_SELF_REF = 510;
+
 void init();
 void* map_page(void* phys, void* virt, uint64_t flags);
 void unmap_page(void* virt);
