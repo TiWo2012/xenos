@@ -1,12 +1,10 @@
 module;
 
 #include <stdarg.h>
-#include <cstdarg>
 
-export module utils.string;
+export module utils;
 
-export namespace utils {
-namespace string {
+export namespace string {
 
 int strcmp(const char *s1, const char *s2) {
   while (*s1 && (*s1 == *s2)) {
@@ -97,5 +95,14 @@ int sprintf(char *s, const char *format, ...) {
   return ret;
 }
 
+} // namespace string
+
+export namespace memory {
+
+void *memset(void *p, int v, int n) {
+  volatile unsigned char *ptr = (volatile unsigned char *)p;
+  while (n--)
+    *ptr++ = (unsigned char)v;
+  return p;
 }
-}
+} // namespace memory

@@ -1,15 +1,14 @@
 module;
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 export module terminal;
 
-import utils.string;
+import utils;
 import pmm;
 import serial;
 import vga;
-import utils.memory;
 
 extern "C" void asm_shutdown();
 
@@ -33,23 +32,18 @@ static void write_prompt() {
 
 void init() {
   buf_idx = 0;
-  utils::memory::memset(buf, 0, sizeof(buf));
+  memory::memset(buf, 0, sizeof(buf));
   vga::set_cursor_visible();
   write_prompt();
 }
 
 static const char keymap[256] = {
-    0,    0,   '1', '2',  '3',  '4', '5', '6',
-    '7',  '8', '9', '0',  '-',  '=', 8,   0,
-    'q',  'w', 'e', 'r',  't',  'y', 'u', 'i',
-    'o',  'p', '[', ']',  '\n', 0,   'a', 's',
-    'd',  'f', 'g', 'h',  'j',  'k', 'l', ';',
-    '\'', '`', 0,   '\\', 'z',  'x', 'c', 'v',
-    'b',  'n', 'm', ',',  '.',  '/', 0,   '*',
-    0,    ' ', 0,   0,    0,    0,   0,   0,
-    0,    0,   0,   0,    0,    0,   0,   '7',
-    '8',  '9', '-', '4',  '5',  '6', '+', '1',
-    '2',  '3', '0', '.',
+    0,    0,    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-',  '=',
+    8,    0,    'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[',  ']',
+    '\n', 0,    'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`',
+    0,    '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0,    '*',
+    0,    ' ',  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,
+    0,    '7',  '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0',  '.',
 };
 
 void send_key(uint8_t scanCode) {
@@ -83,7 +77,7 @@ void send_key(uint8_t scanCode) {
 
     process_command();
     buf_idx = 0;
-    utils::memory::memset(buf, 0, sizeof(buf));
+    memory::memset(buf, 0, sizeof(buf));
     write_prompt();
     return;
   }
@@ -95,20 +89,20 @@ void send_key(uint8_t scanCode) {
 }
 
 void process_command() {
-  if (utils::string::strcmp(buf, "exit") == 0) {
+  if (string::strcmp(buf, "exit") == 0) {
     asm_shutdown();
-  } else if (utils::string::strcmp(buf, "clear") == 0) {
+  } else if (string::strcmp(buf, "clear") == 0) {
     vga::clear_scr();
-  } else if (utils::string::strcmp(buf, "mem") == 0) {
+  } else if (string::strcmp(buf, "mem") == 0) {
     size_t total = pmm::total_frames();
     size_t free = pmm::free_frames();
     size_t used = total - free;
     char line[64];
-    utils::string::sprintf(line, "pmm: total=%u  free=%u  used=%u\n", total,
+    string::sprintf(line, "pmm: total=%u  free=%u  used=%u\n", total,
                            free, used);
     vga::write_string(line);
     serial::printf("%s", line);
-  } else if (utils::string::strcmp(buf, "") == 0) {
+  } else if (string::strcmp(buf, "") == 0) {
   } else {
     vga::write_string("command does not exist\n");
     serial::printf("invalid cmd: %s\n", buf);

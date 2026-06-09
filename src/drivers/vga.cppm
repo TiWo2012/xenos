@@ -8,7 +8,7 @@ export module vga;
 
 import font;
 import pmm;
-import utils.string;
+import utils;
 import binio;
 import serial;
 
@@ -245,7 +245,7 @@ void __dep__printf(const char *format, ...) {
   char buf[1024];
   va_list args;
   va_start(args, format);
-  utils::string::vsprintf(buf, format, args);
+  string::vsprintf(buf, format, args);
   va_end(args);
   __dep__write_string(buf);
 }
@@ -336,7 +336,7 @@ void printf(const char *format, ...) {
   char buf[1024];
   va_list args;
   va_start(args, format);
-  utils::string::vsprintf(buf, format, args);
+  string::vsprintf(buf, format, args);
   va_end(args);
   write_string(buf);
 }

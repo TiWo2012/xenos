@@ -1,21 +1,21 @@
 module;
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 export module heap;
 
 import serial;
-import utils.memory;
+import utils;
 import pmm;
 
 export namespace heap {
 
 void init(size_t size);
-void* alloc(size_t size);
-void free(void* ptr);
-void* calloc(size_t num, size_t size);
-void* realloc(void* ptr, size_t new_size);
+void *alloc(size_t size);
+void free(void *ptr);
+void *calloc(size_t num, size_t size);
+void *realloc(void *ptr, size_t new_size);
 
 } // namespace heap
 
@@ -154,7 +154,7 @@ void *calloc(size_t num, size_t size) {
   size_t total = num * size;
   void *p = alloc(total);
   if (p) {
-    utils::memory::memset(p, 0, total);
+    memory::memset(p, 0, total);
   }
   return p;
 }
@@ -180,7 +180,7 @@ void *realloc(void *ptr, size_t new_size) {
     return nullptr;
   }
 
-  utils::memory::memset(new_ptr, 0, new_size);
+  memory::memset(new_ptr, 0, new_size);
   for (size_t i = 0; i < old_size; i++) {
     ((uint8_t *)new_ptr)[i] = ((uint8_t *)ptr)[i];
   }

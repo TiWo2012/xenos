@@ -30,8 +30,7 @@ target_sources(kernel.elf
     FILE_SET CXX_MODULES
     BASE_DIRS ${CMAKE_SOURCE_DIR}/src
     FILES
-      ${CMAKE_SOURCE_DIR}/src/utils/string.cppm
-      ${CMAKE_SOURCE_DIR}/src/utils/memory.cppm
+      ${CMAKE_SOURCE_DIR}/src/utils.cppm
       ${CMAKE_SOURCE_DIR}/src/drivers/binio.cppm
       ${CMAKE_SOURCE_DIR}/src/drivers/serial.cppm
       ${CMAKE_SOURCE_DIR}/src/drivers/font.cppm
@@ -50,7 +49,6 @@ set_target_properties(kernel.elf PROPERTIES POSITION_INDEPENDENT_CODE OFF)
 target_include_directories(kernel.elf PRIVATE
   ${CMAKE_SOURCE_DIR}/include
   ${CMAKE_SOURCE_DIR}/src
-  ${CMAKE_SOURCE_DIR}/src/utils
   ${CMAKE_SOURCE_DIR}/src/drivers
 )
 
