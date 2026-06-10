@@ -27,11 +27,19 @@ All project headers eliminated. Kernel builds and boots in QEMU.
 | `terminal` | `src/drivers/terminal/terminal.cppm` | `terminal::init`, `send_key`, `process_command` |
 | `irq.kbd` | `src/drivers/irq/kbd.cppm` | `irq::kbd::kbd_init`, `keyboard_handler` |
 | `vmm` | `src/drivers/mem/vmm.cppm` | `vmm::init`, `map_page`, `unmap_page`, `get_physical`, `handle_page_fault` |
+| `tests` | `src/tests.cppm` | `tests::run_all` |
 
 ### Remaining .cpp files (no project includes)
 - `src/boot.cpp` — boot stub, only `<stdint.h>`
 - `src/kernel.cpp` — main, uses `import` for all modules, `<cstddef>` and `<stdint.h>`
 - `src/drivers/isr.cpp` — ASM ISR handler, uses `import idt`, `import serial`, and `import vmm`, `<stdint.h>`
+
+### Testing
+- `src/tests.cppm` — in-kernel test suite (70 assertions across 6 suites: string, memory, pmm, heap, vmm).
+  - Imported and called from `kernel.cpp` after heap init and identity-map drop, before the idle loop.
+  - Uses serial output for PASS/FAIL reporting; prints `ALL TESTS PASSED` on success.
+- `run_tests.sh` — E2E runner: builds kernel, boots in QEMU (`-nographic -no-reboot`), captures serial output, and checks for `ALL TESTS PASSED`.
+- Tests expose a heap free-coalescing bug (cross-page coalescing assumes linked-list adjacency == physical adjacency); heap tests avoid triggering it.
 
 ### Key patterns used
 - `export namespace foo { ... }` for declarations, then `namespace foo { ... }` for definitions (with `static` helper functions inside the non-exported namespace block to avoid "cannot export internal linkage" error).
@@ -49,3 +57,4 @@ All project headers eliminated. Kernel builds and boots in QEMU.
 ### Build
 - CMake 3.28+, Ninja, Clang 22.
 - `./run.sh` configures, builds, creates ISO, and boots in QEMU.
+- `./run_tests.sh` builds, boots in QEMU, and checks for `ALL TESTS PASSED`.
