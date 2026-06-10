@@ -42,6 +42,7 @@ target_sources(kernel.elf
       ${CMAKE_SOURCE_DIR}/src/drivers/mem/vmm.cppm
       ${CMAKE_SOURCE_DIR}/src/drivers/terminal/terminal.cppm
       ${CMAKE_SOURCE_DIR}/src/drivers/irq/kbd.cppm
+      ${CMAKE_SOURCE_DIR}/src/tests.cppm
 )
 
 set_target_properties(kernel.elf PROPERTIES POSITION_INDEPENDENT_CODE OFF)

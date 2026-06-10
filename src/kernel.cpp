@@ -9,6 +9,7 @@ import serial;
 import terminal;
 import vga;
 import vmm;
+import tests;
 import utils;
 #include <cstddef>
 #include <stdint.h>
@@ -89,6 +90,8 @@ extern "C" void kernel_main(uint32_t, uint32_t mb_info) {
   __asm__ __volatile__("invlpg (%0)" : : "r"(0ULL) : "memory");
   serial::printf(
       "identity map dropped, running purely on physmap + higher half\n");
+
+  tests::run_all();
 
   while (true) {
     __asm__ __volatile__("hlt");
