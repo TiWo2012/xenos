@@ -21,6 +21,7 @@ A hobby x86-64 operating system kernel written from scratch in C++23 (using C++2
 - **Terminal shell** — interactive command line over VGA with keyboard input; commands: `clear`, `exit` (ACPI shutdown), `mem` (PMM stats)
 - **ACPI shutdown** — power-off via PM1a_CNT port (`0x604`)
 - **Formatted output** — `printf`/`vsprintf` with `%d`, `%u`, `%x`, `%lx`, `%s`, `%c`
+- **In-kernel tests** — 70-assertion test suite runs at boot, covers string, memory, PMM, VMM, and heap
 
 ## Prerequisites
 
@@ -35,7 +36,8 @@ A hobby x86-64 operating system kernel written from scratch in C++23 (using C++2
 ## Build & Run
 
 ```sh
-./run.sh   # configure (Ninja), build, and boot in QEMU
+./run.sh          # configure (Ninja), build, and boot in QEMU
+./run_tests.sh    # build and run E2E tests (checks for ALL TESTS PASSED)
 ```
 
 The kernel boots in QEMU with the serial port connected to stdio, so all serial debug output appears in your terminal. The VGA console is also visible in the QEMU window.
@@ -45,13 +47,14 @@ The kernel boots in QEMU with the serial port connected to stdio, so all serial 
 ```
 ├── CMakeLists.txt              # Build system (CMake + Ninja, clang/lld/nasm)
 ├── run.sh                      # One-step configure, build, boot
+├── run_tests.sh                # E2E test runner (build + QEMU + result check)
 ├── linker.ld                   # Linker script (kernel at 1M physical)
 ├── grub.cfg                    # GRUB boot menu config source
-├── test.py                     # Generate ISR extern declarations
 ├── src/
 │   ├── entry.asm               # Multiboot2 header, long-mode init, paging, GDT
 │   ├── boot.cpp                # C++ wrapper: calls kernel_main (no imports)
-│   ├── kernel.cpp              # Kernel init: imports all modules, calls init sequence
+│   ├── kernel.cpp              # Kernel init: imports all modules, calls init sequence + tests
+│   ├── tests.cppm              # Module `tests`: in-kernel test suite (70 assertions)
 │   ├── drivers/
 │   │   ├── binio.cppm          # Module `binio`: port I/O (inb/outb)
 │   │   ├── font.cppm           # Module `font`: VGA 8×16 font bitmap
@@ -98,7 +101,8 @@ In `kernel_main`:
 9. Initialize VMM
 10. Print welcome banner, initialize terminal shell
 11. Initialize heap using all free physical memory
-12. Enter infinite `hlt` loop
+12. Run in-kernel test suite (70 assertions across 6 suites)
+13. Enter infinite `hlt` loop
 
 ### Memory Map
 
@@ -157,6 +161,7 @@ The project uses **CMake** (3.28+) with the **Ninja** generator, Clang, NASM, an
 
 - Module sources (`.cppm`) are registered as a `FILE_SET CXX_MODULES` in `CMakeLists.txt`, enabling Clang's module support
 - `./run.sh` runs `cmake --fresh -B build -G Ninja` then `cmake --build build --target run`
+- `./run_tests.sh` builds the kernel, boots it in QEMU (`-nographic -no-reboot`), captures serial output, and checks for `ALL TESTS PASSED`
 - `os.iso` is produced by `grub-mkrescue` via a custom CMake target
 - QEMU is invoked with `-cdrom os.iso -serial stdio`
 
@@ -224,6 +229,12 @@ terminal::send_key(scancode);
 ```cpp
 import utils.string;
 utils::string::strcmp, utils::string::sprintf, utils::string::vsprintf;
+```
+
+### `tests`
+```cpp
+import tests;
+tests::run_all();   // prints PASS/FAIL per assertion, "ALL TESTS PASSED" on success
 ```
 
 ### `irq.pit` / `irq.kbd`
